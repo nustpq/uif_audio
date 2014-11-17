@@ -66,7 +66,7 @@ void Alert_Sound_Gen( unsigned char *pdata, unsigned int size, unsigned int REC_
 void Init_I2S_Buffer( void )
 {
   
-#if( true )   //debug use
+#if( false )   //debug use
     
     unsigned int i;
     unsigned short  *pInt;
@@ -99,7 +99,7 @@ void Init_I2S_Buffer( void )
 #else  
     
     //Demo_Sine_Gen(I2SBuffersIn[0], I2S_IN_BUFFER_SIZE, 48000);    
-    memset((unsigned char *)I2SBuffersOut, 0x55, I2S_OUT_BUFFER_SIZE<<1);
+    memset((unsigned char *)I2SBuffersOut, 0, I2S_OUT_BUFFER_SIZE<<1);
    
     
 #endif
@@ -261,86 +261,86 @@ void HDMA_IrqHandler(void)
 
     if( status & ( 1 << BOARD_SSC_OUT_DMA_CHANNEL) ) {   //play 
        
-//        //printf("-SO-") ;              
-//        temp = kfifo_get_data_size(&bulkout_fifo);        
-//        TRACE_INFO_NEW_WP("\n\r[%d, %d]",temp,error_bulkout_empt);
-//        
-//        if( (i2s_play_buffer_size<<PLAY_BUF_DLY_N) <= (temp<<1)) { //play buffer delay (2^PLAY_BUF_DLY_N) ms       
-//            bulkout_trigger = true; //1st buffered enough data will trigger SSC Out
-//            //printf(" T ");
-//        }        
-//
-////        if ( (i2s_play_buffer_size <= temp) && bulkout_trigger ) { //play until buf have enough data  
-////            if( bulkout_empt ) {
-////                TRACE_INFO_NEW_WP( "\r\n ##IN1: %d, OUT: %d",bulkout_fifo.in, bulkout_fifo.out);
-////                if( bulkout_empt > bulkout_fifo.size ) {
-////                    bulkout_empt -= bulkout_fifo.size;
-////                    kfifo_release(&bulkout_fifo, bulkout_fifo.size);
-////                    memset((unsigned char *)I2SBuffersOut[i2s_buffer_out_index],0x00,i2s_play_buffer_size); //can pop sound gene          
-////                    bulkout_empt++;
-////                    error_bulkout_empt++;
-////                } else {
-////                    kfifo_release(&bulkout_fifo, bulkout_empt);
-////                    bulkout_empt = 0;
-////                }
-////                TRACE_INFO_NEW_WP( "\r\n ##IN2: %d, OUT: %d",bulkout_fifo.in, bulkout_fifo.out);
-////            }                        
-////             
-////            kfifo_get(&bulkout_fifo, (unsigned char *)I2SBuffersOut[i2s_buffer_out_index], i2s_play_buffer_size) ;
-////            TRACE_INFO_NEW_WP( "\r\n ##IN: %d, OUT: %d",bulkout_fifo.in, bulkout_fifo.out);
-////
-////             
-////       } else {  //play buf empty , send silence : 0x00
-////            memset((unsigned char *)I2SBuffersOut[i2s_buffer_out_index],0x00,i2s_play_buffer_size); //can pop sound gene          
-////            error_bulkout_empt++; //bulkout fifo empty error                
-////            if( bulkout_trigger ) {               
-////                bulkout_empt++;           
-////            }
-////        }  
-//        
-//      if ( bulkout_trigger ) {  
-//            if( i2s_play_buffer_size <= temp ) {
-//                kfifo_get(&bulkout_fifo, (unsigned char *)I2SBuffersOut[i2s_buffer_out_index], i2s_play_buffer_size) ;                
-//                if( bulkout_empt != 0 ) { // if empty did happened at least once
-//                    flag_bulkout_empt = true;
+        //printf("-SO-") ;              
+        temp = kfifo_get_data_size(&bulkout_fifo);        
+        TRACE_INFO_NEW_WP("\n\r[%d, %d]",temp,error_bulkout_empt);
+        
+        if( (i2s_play_buffer_size<<PLAY_BUF_DLY_N) <= (temp<<1)) { //play buffer delay (2^PLAY_BUF_DLY_N) ms       
+            bulkout_trigger = true; //1st buffered enough data will trigger SSC Out
+            //printf(" T ");
+        }        
+
+//        if ( (i2s_play_buffer_size <= temp) && bulkout_trigger ) { //play until buf have enough data  
+//            if( bulkout_empt ) {
+//                TRACE_INFO_NEW_WP( "\r\n ##IN1: %d, OUT: %d",bulkout_fifo.in, bulkout_fifo.out);
+//                if( bulkout_empt > bulkout_fifo.size ) {
+//                    bulkout_empt -= bulkout_fifo.size;
+//                    kfifo_release(&bulkout_fifo, bulkout_fifo.size);
+//                    memset((unsigned char *)I2SBuffersOut[i2s_buffer_out_index],0x00,i2s_play_buffer_size); //can pop sound gene          
+//                    bulkout_empt++;
+//                    error_bulkout_empt++;
+//                } else {
+//                    kfifo_release(&bulkout_fifo, bulkout_empt);
+//                    bulkout_empt = 0;
 //                }
-//            } else {
-//                error_bulkout_empt++;
-//                bulkout_empt++;
+//                TRACE_INFO_NEW_WP( "\r\n ##IN2: %d, OUT: %d",bulkout_fifo.in, bulkout_fifo.out);
+//            }                        
+//             
+//            kfifo_get(&bulkout_fifo, (unsigned char *)I2SBuffersOut[i2s_buffer_out_index], i2s_play_buffer_size) ;
+//            TRACE_INFO_NEW_WP( "\r\n ##IN: %d, OUT: %d",bulkout_fifo.in, bulkout_fifo.out);
+//
+//             
+//       } else {  //play buf empty , send silence : 0x00
+//            memset((unsigned char *)I2SBuffersOut[i2s_buffer_out_index],0x00,i2s_play_buffer_size); //can pop sound gene          
+//            error_bulkout_empt++; //bulkout fifo empty error                
+//            if( bulkout_trigger ) {               
+//                bulkout_empt++;           
 //            }
-//           
-//      } else {
-//          memset((unsigned char *)I2SBuffersOut[i2s_buffer_out_index],0x00,i2s_play_buffer_size); //can pop sound gene          
-//          error_bulkout_empt++; //first bulkout fifo empty error is OK   
-//           
-//      }
-//      
-//      if( bulkout_empt != 0 ) { //play lost data happened,   
-//          if( flag_bulkout_empt ) {//Abnormal data lost, force to fixed data to alert user play error...           
-//              Alert_Sound_Gen( (unsigned char *)I2SBuffersOut[i2s_buffer_out_index], i2s_play_buffer_size,  Audio_Configure[1].sample_rate);
-//          
-//          } else {  //Stop MMX engine first cause play empty, send 0
-//              memset((unsigned char *)I2SBuffersOut[i2s_buffer_out_index],0x00,i2s_play_buffer_size); //can pop sound gene          
-//          
-//          }
-//      }
+//        }  
+        
+      if ( bulkout_trigger ) {  
+            if( i2s_play_buffer_size <= temp ) {
+                kfifo_get(&bulkout_fifo, (unsigned char *)I2SBuffersOut[i2s_buffer_out_index], i2s_play_buffer_size) ;                
+                if( bulkout_empt != 0 ) { // if empty did happened at least once
+                    flag_bulkout_empt = true;
+                }
+            } else {
+                error_bulkout_empt++;
+                bulkout_empt++;
+            }
+           
+      } else {
+          memset((unsigned char *)I2SBuffersOut[i2s_buffer_out_index],0x00,i2s_play_buffer_size); //can pop sound gene          
+          error_bulkout_empt++; //first bulkout fifo empty error is OK   
+           
+      }
+      
+      if( bulkout_empt != 0 ) { //play lost data happened,   
+          if( flag_bulkout_empt ) {//Abnormal data lost, force to fixed data to alert user play error...           
+              Alert_Sound_Gen( (unsigned char *)I2SBuffersOut[i2s_buffer_out_index], i2s_play_buffer_size,  Audio_Configure[1].sample_rate);
+          
+          } else {  //Stop MMX engine first cause play empty, send 0
+              memset((unsigned char *)I2SBuffersOut[i2s_buffer_out_index],0x00,i2s_play_buffer_size); //can pop sound gene          
+          
+          }
+      }
       
 //     if(test_dump++ == 1000) {
 //        dump_buf_debug((void *)I2SBuffersOut[i2s_buffer_out_index],i2s_play_buffer_size);   
 //     }
-      
+//      
        SSC_WriteBuffer(AT91C_BASE_SSC0, (void *)I2SBuffersOut[i2s_buffer_out_index], i2s_buffer_out_index,  i2s_play_buffer_size);             
        i2s_buffer_out_index ^= 1;     
         
-//       if ( bulkout_enable && bulkout_start && (!flag_stop) && ((USBDATAEPSIZE<<0) <= kfifo_get_free_space(&bulkout_fifo)) ) { //
-//            //printf("-LBO-") ;         
-//            bulkout_start = false ;
-//            error_bulkout_full++;
-//            CDCDSerialDriver_Read(   usbBufferBulkOut,
-//                                     USBDATAEPSIZE,
-//                                     (TransferCallback) UsbDataReceived,
-//                                     0);
-//       }      
+       if ( bulkout_enable && bulkout_start && (!flag_stop) && ((USBDATAEPSIZE<<0) <= kfifo_get_free_space(&bulkout_fifo)) ) { //
+            //printf("-LBO-") ;         
+            bulkout_start = false ;
+            error_bulkout_full++;
+            CDCDSerialDriver_Read(   usbBufferBulkOut,
+                                     USBDATAEPSIZE,
+                                     (TransferCallback) UsbDataReceived,
+                                     0);
+       }      
     } 
 }
 

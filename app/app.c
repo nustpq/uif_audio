@@ -50,7 +50,7 @@
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
-char fw_version[] = "[FW:A:V0.1]";
+char fw_version[] = "[FW:A:V0.2]";
 ////////////////////////////////////////////////////////////////////////////////
 
 //Buffer Level 1:  USB data stream buffer : 512 B
@@ -224,10 +224,10 @@ static unsigned char Init_Play_Setting( void )
     bit_length    = Audio_Configure[1].bit_length ; 
     printf( "\r\nStart [%dth]Play[%dCH - %dHz - %dBit] ...\r\n",counter_play++,channels_play,sample_rate,bit_length);  
     
-    if( channels_play == 0 ||  channels_play > 8 ) {        
+    if( (channels_play == 0) ||  (channels_play > 8) ) {        
         err = ERR_TDM_FORMAT ; 
     }  
-    if( bit_length != 16 &&  bit_length != 32  ) {        
+    if( (bit_length != 16) && (bit_length != 32)  ) {        
         err = ERR_TDM_FORMAT ; 
     }  
     if( NULL != err ) {
@@ -261,15 +261,16 @@ static unsigned char Init_Rec_Setting( void )
     unsigned char  channels_rec;
     unsigned char  bit_length;
     
+    err  = NULL;    
     channels_rec = Audio_Configure[0].channel_num ;
     sample_rate  = Audio_Configure[0].sample_rate ;
     bit_length   = Audio_Configure[0].bit_length ;    
     printf( "\r\nStart [%dth]Rec [%dCH - %dHz - %dBit]...\r\n",counter_rec++,channels_rec,sample_rate,bit_length);     
     
-    if( channels_rec == 0 ||  channels_rec > 8 ) {        
+    if( (channels_rec == 0) || (channels_rec > 8) ) {  
         err = ERR_TDM_FORMAT ; 
     }  
-    if( bit_length != 16  && bit_length != 32  ) {        
+    if( (bit_length != 16)  && (bit_length != 32)  ) {     
         err = ERR_TDM_FORMAT ; 
     }  
     if( NULL != err ) {

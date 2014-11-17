@@ -18,11 +18,11 @@
 
 //Softpack Version
 #define MCK                  BOARD_MCK
-#define I2S_IN_BUFFER_SIZE   1536   //audio data transfered per frame, Max 48kHz:   48k*2B*8Slot*2ms=1536
-#define I2S_OUT_BUFFER_SIZE  1536   //Max 48kHz:   48*2*4*2=768
+#define I2S_IN_BUFFER_SIZE   1536   //audio data transfered per frame, Max 48kHz:   48k*4B*8Slot*1ms=1536
+#define I2S_OUT_BUFFER_SIZE  1536   
 #define USBDATAEPSIZE        BOARD_USB_ENDPOINTS_MAXPACKETSIZE( CDCDSerialDriverDescriptors_DATAIN ) //512
 #define USB_OUT_BUFFER_SIZE  16384//32768//16384  //2^14=16384  //USB audio data, size MUST be 2^n .
-#define USB_IN_BUFFER_SIZE   8192//16384  //2^14=16384  //USB audio data, size MUST be 2^n .
+#define USB_IN_BUFFER_SIZE   16384  //2^14=16384  //USB audio data, size MUST be 2^n .
 
 #define PLAY_BUF_DLY_N       5//6  //delay 2^6=64 ms
 
