@@ -20,11 +20,21 @@
 #define MCK                  BOARD_MCK
 #define I2S_IN_BUFFER_SIZE   1536   //audio data transfered per frame, Max 48kHz:   48k*4B*8Slot*1ms=1536
 #define I2S_OUT_BUFFER_SIZE  1536   
-#define USBDATAEPSIZE        BOARD_USB_ENDPOINTS_MAXPACKETSIZE( CDCDSerialDriverDescriptors_DATAIN ) //512
+#define USBDATAEPSIZE        BOARD_USB_ENDPOINTS_MAXPACKETSIZE( CDCDSerialDriverDescriptors_DATAIN ) //64//512
 #define USB_OUT_BUFFER_SIZE  16384//32768//16384  //2^14=16384  //USB audio data, size MUST be 2^n .
 #define USB_IN_BUFFER_SIZE   16384  //2^14=16384  //USB audio data, size MUST be 2^n .
 
 #define PLAY_BUF_DLY_N       5//6  //delay 2^6=64 ms
+
+
+/////////////////////////////////
+#define UART_IN_BUFFER_SIZE   128   
+#define UART_OUT_BUFFER_SIZE  128   
+#define USBCMDDATAEPSIZE      BOARD_USB_ENDPOINTS_MAXPACKETSIZE( CDCDSerialDriverDescriptors_CMDDATAIN ) //64
+#define USB_CMD_OUT_BUFFER_SIZE  1024//USB audio data, size MUST be 2^n .
+#define USB_CMD_IN_BUFFER_SIZE   1024//USB audio data, size MUST be 2^n .
+/////////////////////////////////
+
 
 // A programmable priority level of 0-15 for each interrupt. A higher level corresponds to a lower 
 // priority, so level 0 is the highest interrupt priority
@@ -76,17 +86,29 @@ extern unsigned char usb_data_padding;
 
 extern unsigned char audio_cmd_ack;
 
+
+
 extern unsigned char usbBufferBulkOut[];
 extern unsigned char usbBufferBulkIn[];
-
 extern unsigned char FIFOBufferBulkOut[];
 extern unsigned char FIFOBufferBulkIn[]; 
-
 extern unsigned char I2SBuffersOut[2][I2S_OUT_BUFFER_SIZE]; 
 extern unsigned char I2SBuffersIn[2][I2S_IN_BUFFER_SIZE]; 
-
 extern volatile unsigned char i2s_buffer_out_index;
 extern volatile unsigned char i2s_buffer_in_index;
+
+
+extern unsigned char usbCmdBufferBulkOut[];
+extern unsigned char usbCmdBufferBulkIn[]; 
+extern unsigned char FIFOBufferBulkOutCmd[];
+extern unsigned char FIFOBufferBulkInCmd[];  
+extern unsigned char UARTBuffersOut[UART_OUT_BUFFER_SIZE]; 
+extern unsigned char UARTBuffersIn[UART_IN_BUFFER_SIZE];
+extern volatile unsigned char uart_buffer_out_index ;
+extern volatile unsigned char uart_buffer_in_index ;
+
+extern kfifo_t bulkout_fifo_cmd;
+extern kfifo_t bulkin_fifo_cmd;
 
 
 extern volatile unsigned int i2s_play_buffer_size ;
@@ -97,6 +119,11 @@ extern unsigned char  sample_index;
 
 extern volatile bool bulkin_start;
 extern volatile bool bulkout_start;
+extern volatile bool bulkin_start_cmd;
+extern volatile bool bulkout_start_cmd;
+extern volatile bool uartin_start_cmd;
+extern volatile bool uartout_start_cmd;
+
 extern volatile bool bulkout_enable;
 extern volatile bool bulkin_enable;
 extern volatile bool bulkout_trigger;
@@ -115,8 +142,10 @@ extern void Init_Buffer( void );
 extern void Audio_State_Control( void );
 
 void Get_Run_Time( unsigned int time );
-void UART_Init( void );
+void UART0_Init( void );
+void UART1_Init( void );
 void Check_UART_CMD( void );
+
 void USB_Init( void );
 void I2S_Init( void );
 void I2S_ReInit( void );

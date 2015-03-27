@@ -50,7 +50,7 @@
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
-char fw_version[] = "[FW:A:V0.2]";
+char fw_version[] = "[FW:A:V2.0]";
 ////////////////////////////////////////////////////////////////////////////////
 
 //Buffer Level 1:  USB data stream buffer : 512 B
@@ -63,7 +63,7 @@ unsigned char FIFOBufferBulkIn[USB_IN_BUFFER_SIZE];
 
 //Buffer Level 3:  Double-buffer for I2S data : MAX 48*2*8*2 = 1536 B
 unsigned char I2SBuffersOut[2][I2S_OUT_BUFFER_SIZE]; // Play
-unsigned char I2SBuffersIn[2][I2S_IN_BUFFER_SIZE];  // Record
+unsigned char I2SBuffersIn[2][I2S_IN_BUFFER_SIZE];   // Record
 // Current I2S buffer index.
 volatile unsigned char i2s_buffer_out_index = 0;
 volatile unsigned char i2s_buffer_in_index  = 0;
@@ -72,9 +72,28 @@ AUDIO_CFG  Audio_Configure[2]; //[0]: rec config. [1]: play config.
 unsigned char audio_cmd_index     = AUDIO_CMD_IDLE ; 
 unsigned char usb_data_padding    = 0; //add for usb BI/BO padding for first package
 
-
 kfifo_t bulkout_fifo;
 kfifo_t bulkin_fifo;
+
+//////////////////////////////////////////
+//Buffer Level 1:  USB Cmd data stream buffer : 512 B
+unsigned char usbCmdBufferBulkOut[USBCMDDATAEPSIZE];
+unsigned char usbCmdBufferBulkIn[USBCMDDATAEPSIZE]; 
+
+//Buffer Level 2:  FIFO Loop Data Buffer : 16384 B
+unsigned char FIFOBufferBulkOutCmd[USB_CMD_OUT_BUFFER_SIZE];
+unsigned char FIFOBufferBulkInCmd[USB_CMD_IN_BUFFER_SIZE];  
+
+//Buffer Level 3:  Double-buffer for I2S data : MAX 48*2*8*2 = 1536 B
+unsigned char UARTBuffersOut[UART_OUT_BUFFER_SIZE]; // Play
+unsigned char UARTBuffersIn[UART_IN_BUFFER_SIZE];  // Record
+// Current I2S buffer index.
+volatile unsigned char uart_buffer_out_index = 0;
+volatile unsigned char uart_buffer_in_index  = 0;
+
+kfifo_t bulkout_fifo_cmd;
+kfifo_t bulkin_fifo_cmd;
+///////////////////////////////////////
 
 volatile unsigned int i2s_play_buffer_size ; //real i2s paly buffer
 volatile unsigned int i2s_rec_buffer_size ;  //real i2s record buffer
@@ -84,6 +103,13 @@ volatile bool bulkout_enable   = false ;
 volatile bool bulkin_enable    = false ;
 volatile bool bulkin_start     = true;
 volatile bool bulkout_start    = true;
+
+volatile bool bulkin_start_cmd     = true;
+volatile bool bulkout_start_cmd    = true;
+
+volatile bool uartin_start_cmd     = true;
+volatile bool uartout_start_cmd    = true;
+
 volatile bool bulkout_trigger  = false ;
 volatile bool flag_stop        = false ;
 volatile bool bulkout_padding_ok  = false ;
@@ -147,9 +173,9 @@ void Init_GPIO( void )
 {     
     //PIO_InitializeInterrupts( PIO_PRIORITY ); 
     LED_Configure(USBD_LEDPOWER);
-    LED_Configure(USBD_LEDUDATA);    
-    LED_Set(USBD_LEDPOWER); 
-    LED_Set(USBD_LEDUDATA); 
+    LED_Configure(USBD_LEDDATA);    
+    //LED_Set(USBD_LEDPOWER); 
+    //LED_Set(USBD_LEDDATA); 
   
 }
 
@@ -413,7 +439,7 @@ static void Audio_Stop( void )
     SSC_Reset(); //I2S_Init();    
     
     Init_Bulk_FIFO();    
-    LED_Clear( USBD_LEDUDATA );
+    LED_Clear( USBD_LEDDATA );
     
     bulkin_start      = true ; 
     bulkout_start     = true ;    
@@ -583,21 +609,40 @@ void Debug_Info( void )
     unsigned int DBGUART_free_size ;
     
     static unsigned int counter;
+    static unsigned int counter2;
   
+    
     if( !(bulkout_enable || bulkin_enable) ) { 
         if( Check_SysTick_State() == 0 ) { 
               return;
         }
+        if( counter++ % 20 == 0 ) { //100ms * 20 = 2s              
+            counter2++;
+            printf("\r\n");
+        } 
         printf("\r");
         Get_Run_Time(second_counter);
-        printf(" [LostStop: %d][LastPadding: 0x%X]  Wait for starting...",Stop_CMD_Miss_Counter,usb_data_padding);
+        
+        if( counter2 & 0x01 ) { //            
+            BO_free_size = kfifo_get_free_space(&bulkout_fifo_cmd) ;
+            BO_free_size = BO_free_size * 100 / USB_CMD_OUT_BUFFER_SIZE;    
+            BI_free_size = kfifo_get_free_space(&bulkin_fifo_cmd) ;  
+            BI_free_size = BI_free_size * 100 / USB_CMD_IN_BUFFER_SIZE;            
+            printf(" CMD:   IN[%6.6f MB, Free:%3u%]  OUT[%6.6f MB, Free:%3u%]. ",  
+                   total_transmit_cmd/1000000.0,  BI_free_size,  total_received_cmd/1000000.0,  BO_free_size ); 
+            return;   
+        } 
+        
+        printf(" AUDIO: [LostStop: %d][LastPadding: 0x%X]  Wait for starting...",Stop_CMD_Miss_Counter,usb_data_padding);
         return ; 
+        
     }
     
+
     //start print debug_after USB trans started
     if( (total_received < 102400) && (total_transmit < 102400) ){  
         return;
-    }  
+    } 
          
     BO_free_size = kfifo_get_free_space(&bulkout_fifo) ;
     BO_free_size = BO_free_size * 100 / USB_OUT_BUFFER_SIZE;
@@ -632,7 +677,7 @@ void Debug_Info( void )
         printf("\r\nReceived USB Sync package.\r\n");
     }
     
-    printf("\rIN[%6.6f MB, Full:%u, Empty:%u, Free:%3u%>%3u%]  OUT[%6.6f MB, Full:%u, Empty:%u, Free:%3u%<%3u%]. ",
+    printf("\rAUDIO: IN[%6.6f MB, Full:%u, Empty:%u, Free:%3u%>%3u%]  OUT[%6.6f MB, Full:%u, Empty:%u, Free:%3u%<%3u%]. ",
                          
                total_transmit/1000000.0,               
                error_bulkin_full,

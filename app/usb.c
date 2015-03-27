@@ -44,21 +44,16 @@
 #include "kfifo.h"
 #include <ssc/ssc.h>
 #include <app.h>
+#include "uart.h"
 
 
 
-/// Use for power management
-#define STATE_IDLE    0
-/// The USB device is in suspend state
-#define STATE_SUSPEND 4
-/// The USB device is in resume state
-#define STATE_RESUME  5
 
 //------------------------------------------------------------------------------
 //      Internal variables
 //------------------------------------------------------------------------------
 /// State of USB, for suspend and resume
-unsigned char USBState = STATE_IDLE;
+unsigned char USBState  = false ;
 
 unsigned long long total_received = 0 ;
 unsigned long long total_transmit = 0 ;
@@ -67,6 +62,8 @@ unsigned int error_bulkout_empt  = 0 ;
 unsigned int error_bulkin_full   = 0 ;
 unsigned int error_bulkin_empt   = 0 ;
 
+unsigned long long total_received_cmd = 0 ;
+unsigned long long total_transmit_cmd = 0 ;
 
 //------------------------------------------------------------------------------
 //         VBus monitoring (optional)
@@ -127,7 +124,7 @@ static void VBus_Configure( void )
     PIO_EnableIt(&pinVbus);
 
     // Check current level on VBus
-    if (PIO_Get(&pinVbus)) {
+    if (PIO_Get(&pinVbus) == 0 ) { //EVM2.0 reverted transistor
 
         // if VBUS present, force the connect
         TRACE_INFO("VBUS conn\r\n");
@@ -157,9 +154,9 @@ void USBDCallbacks_Resumed(void)
     // Initialize LEDs
     LED_Configure(USBD_LEDPOWER);
     LED_Set(USBD_LEDPOWER);
-    LED_Configure(USBD_LEDUSB);
-    LED_Clear(USBD_LEDUSB);
-    USBState = STATE_RESUME;
+    LED_Configure(USBD_LEDDATA);
+    LED_Clear(USBD_LEDDATA);
+  
 }
 
 //------------------------------------------------------------------------------
@@ -169,10 +166,10 @@ void USBDCallbacks_Suspended(void)
 {
     // Turn off LEDs
     LED_Clear(USBD_LEDPOWER);
-    LED_Clear(USBD_LEDUSB);
+    LED_Clear(USBD_LEDDATA);
     
-    if (USBD_GetState() >= USBD_STATE_CONFIGURED)
-        USBState = STATE_SUSPEND;
+    if (USBD_GetState() >= USBD_STATE_CONFIGURED);
+       
 }
 */
 
@@ -201,7 +198,6 @@ static unsigned int check_bulkout_data( unsigned char *pBuf, unsigned int length
       }          
     }
     return 0;  
-  
 }
 */
 
@@ -215,6 +211,11 @@ void Init_Bulk_FIFO( void )
     kfifo_init_static(pfifo, FIFOBufferBulkOut, USB_OUT_BUFFER_SIZE);
     pfifo = &bulkin_fifo;
     kfifo_init_static(pfifo, FIFOBufferBulkIn, USB_IN_BUFFER_SIZE);
+    
+    pfifo = &bulkout_fifo_cmd;
+    kfifo_init_static(pfifo, FIFOBufferBulkOutCmd, USB_CMD_OUT_BUFFER_SIZE);
+    pfifo = &bulkin_fifo_cmd;
+    kfifo_init_static(pfifo, FIFOBufferBulkInCmd, USB_CMD_IN_BUFFER_SIZE);
 
 }  
 
@@ -223,7 +224,7 @@ void Init_Bulk_FIFO( void )
 
 /*
 *********************************************************************************************************
-*                                    UsbDataReceived()
+*                                    UsbAudioDataReceived()
 *
 * Description :  USB bulk out process call back subroutine
 * Argument(s) :  unused    : not used argument.
@@ -236,14 +237,14 @@ void Init_Bulk_FIFO( void )
 * Note(s)     : None.
 *********************************************************************************************************
 */
-void UsbDataReceived(  unsigned int unused,
+void UsbAudioDataReceived(  unsigned int unused,
                               unsigned char status,
                               unsigned int received,
                               unsigned int remaining )
 {
     TRACE_INFO_NEW_WP("\r\n#BO:") ;
     //Play
-    
+          
     if ( ! bulkout_enable ) {
         //printf("\r\nstatus %d, bulkout_enable %d\r\n",status, bulkout_enable);
         return ;
@@ -284,7 +285,7 @@ void UsbDataReceived(  unsigned int unused,
         if ( USBDATAEPSIZE <= kfifo_get_free_space( &bulkout_fifo ) ) { //enouth free buffer                      
             CDCDSerialDriver_Read(    usbBufferBulkOut,
                                       USBDATAEPSIZE,
-                                      (TransferCallback) UsbDataReceived,
+                                      (TransferCallback) UsbAudioDataReceived,
                                       0);        
         } else { //usb out too fast                     
             bulkout_start  = true ;
@@ -293,7 +294,7 @@ void UsbDataReceived(  unsigned int unused,
         total_received += received ; 
      
     }  else {      
-        printf( "\r\nERROR : UsbDataReceived: Transfer error\r\n" ); 
+        printf( "\r\nERROR : UsbAudioDataReceived: Transfer error\r\n" ); 
         
     }
     
@@ -303,7 +304,7 @@ void UsbDataReceived(  unsigned int unused,
 
 /*
 *********************************************************************************************************
-*                                    UsbDataTransmit()
+*                                    UsbAudioDataTransmit()
 *
 * Description :  USB bulk in process call back subroutine
 * Argument(s) :  unused    : not used argument.
@@ -316,7 +317,7 @@ void UsbDataReceived(  unsigned int unused,
 * Note(s)     : None.
 *********************************************************************************************************
 */
-void UsbDataTransmit(  unsigned int unused,
+void UsbAudioDataTransmit(  unsigned int unused,
                               unsigned char status,
                               unsigned int transmit,
                               unsigned int remaining )
@@ -337,7 +338,7 @@ void UsbDataTransmit(  unsigned int unused,
         
             CDCDSerialDriver_Write( usbBufferBulkIn,
                                     USBDATAEPSIZE,
-                                    (TransferCallback) UsbDataTransmit,
+                                    (TransferCallback) UsbAudioDataTransmit,
                                     0);       
         } else {                    
             bulkin_start  = true ;  
@@ -348,14 +349,144 @@ void UsbDataTransmit(  unsigned int unused,
     }  else {
         CDCDSerialDriver_Write( usbBufferBulkIn,
                                 USBDATAEPSIZE,
-                                (TransferCallback) UsbDataTransmit,
+                                (TransferCallback) UsbAudioDataTransmit,
                                 0);  
-        TRACE_WARNING( "\r\nERROR : UsbDataTransmit: Rr-transfer hit\r\n" );  
+        TRACE_WARNING( "\r\nERROR : UsbAudioDataTransmit: Rr-transfer hit\r\n" );  
         
     }    
     
 }
 
+
+/*
+*********************************************************************************************************
+*                                    UsbCmdDataReceived()
+*
+* Description :  USB bulk out process call back subroutine
+* Argument(s) :  unused    : not used argument.
+*                status    : curren USB data process status, must be SUCCESS to operation
+*                received  : received data in buffer
+*                remaining : remaining data in buffer
+*
+* Return(s)   :  None.
+*
+* Note(s)     : None.
+*********************************************************************************************************
+*/
+void UsbCmdDataReceived(      unsigned int unused,
+                              unsigned char status,
+                              unsigned int received,
+                              unsigned int remaining )
+{
+    unsigned int counter ;
+    //printf("\r\n#CMDBO:") ;
+    //Play : USB Received,  UART send    
+
+    if ( status == USBD_STATUS_SUCCESS ) {         
+        kfifo_put(&bulkout_fifo_cmd, usbCmdBufferBulkOut, received); 
+        //printf("[%d]",received) ;
+        if ( USBCMDDATAEPSIZE <= kfifo_get_free_space( &bulkout_fifo_cmd ) ) { //enouth free buffer                      
+            CDCDSerialDriver_ReadCMD(    usbCmdBufferBulkOut,
+                                         USBCMDDATAEPSIZE,
+                                        (TransferCallback) UsbCmdDataReceived,
+                                        0);        
+        } else { //usb out too fast                     
+            bulkout_start_cmd  = true ;            
+        }  
+        
+        //start UART send
+        if( uartout_start_cmd ) {
+            uartout_start_cmd = false;
+            counter = kfifo_get(&bulkout_fifo_cmd, (unsigned char *)UARTBuffersOut, UART1_BUFFER_SIZE) ;
+            //printf("[%d]:",counter) ;
+            if( counter ) { 
+                AT91C_BASE_US1->US_TPR  = (unsigned int)UARTBuffersOut;
+                AT91C_BASE_US1->US_TCR  = counter;
+                AT91C_BASE_US1->US_PTCR = AT91C_PDC_TXTEN;//start PDC 
+                AT91C_BASE_US1->US_IER  = AT91C_US_ENDTX; //PQ
+            }
+        }        
+        total_received_cmd += received ; 
+     
+    }  else {      
+        printf( "\r\nERROR : UsbCmdDataReceived: Transfer error\r\n" ); 
+        
+    }
+    
+    
+}
+
+
+/*
+*********************************************************************************************************
+*                                    UsbCmdDataTransmit()
+*
+* Description :  USB bulk in process call back subroutine
+* Argument(s) :  unused    : not used argument.
+*                status    : curren USB data process status, must be SUCCESS to operation
+*                received  : received data in buffer
+*                remaining : remaining data in buffer
+*
+* Return(s)   :  None.
+*
+* Note(s)     : None.
+*********************************************************************************************************
+*/
+void UsbCmdDataTransmit(      unsigned int unused,
+                              unsigned char status,
+                              unsigned int transmit,
+                              unsigned int remaining )
+{
+    unsigned int counter ;
+    //printf("\r\n#CMDBI:") ;            
+    //Record : USB Send,  UART Received       
+    
+    if ( status == USBD_STATUS_SUCCESS  ) {       
+        
+        counter =  kfifo_get_data_size(  &bulkin_fifo_cmd );
+        //printf("[%d]", counter) ;
+        if ( USBCMDDATAEPSIZE <= counter  ) { //enouth data to send to PC
+            
+            kfifo_get(&bulkin_fifo_cmd, usbCmdBufferBulkIn, USBCMDDATAEPSIZE);         
+            CDCDSerialDriver_WriteCMD( usbCmdBufferBulkIn,
+                                       USBCMDDATAEPSIZE,
+                                       (TransferCallback) UsbCmdDataTransmit,
+                                       0);       
+                    } else if( 0 < counter ){  //need optimize : what if last package data less than EP size
+            kfifo_get(&bulkin_fifo_cmd, usbCmdBufferBulkIn, counter); 
+        
+            CDCDSerialDriver_WriteCMD( usbCmdBufferBulkIn,
+                                       counter,
+                                       (TransferCallback) UsbCmdDataTransmit,
+                                       0);              
+        } else{
+            bulkin_start_cmd  = true ;             
+        }          
+        
+        //start UART receive
+        counter = kfifo_get_free_space(&bulkin_fifo_cmd); 
+        
+        if( uartin_start_cmd && (UART1_BUFFER_SIZE <= counter) ) {           
+            uartin_start_cmd = false;            
+            //printf("[%d]", counter) ;  
+            AT91C_BASE_US1->US_RPR  = (unsigned int)UARTBuffersIn;
+            AT91C_BASE_US1->US_RCR  = UART1_BUFFER_SIZE;
+            AT91C_BASE_US1->US_PTCR = AT91C_PDC_RXTEN; 
+            AT91C_BASE_US1->US_IER  = AT91C_US_ENDRX | AT91C_US_TIMEOUT; 
+        } 
+        total_transmit_cmd += transmit ; 
+     
+    }  else {
+        
+        CDCDSerialDriver_WriteCMD( usbCmdBufferBulkIn,
+                                   USBCMDDATAEPSIZE,
+                                  (TransferCallback) UsbCmdDataTransmit,
+                                  0);  
+        TRACE_WARNING( "\r\nERROR : UsbCmdDataTransmit: Re-transfer hit\r\n" );  
+        
+    }    
+    
+}
 
 /*
 *********************************************************************************************************
@@ -370,7 +501,7 @@ void UsbDataTransmit(  unsigned int unused,
 */
 void USB_Init(void)
 {
-   printf("\r\nInit USB ...");
+    printf("\r\nInit USB ...");
   
    // If there is on board power, switch it off 
 #ifdef PIN_USB_POWER_ENB
@@ -383,10 +514,7 @@ void USB_Init(void)
     const Pin pinPullUp = PIN_USB_PULLUP;
     PIO_Configure(&pinPullUp,1);
 #endif  
-  
-    LED_Configure(USBD_LEDPOWER);
-    LED_Configure(USBD_LEDUSB);
-    
+      
     // BOT driver initialization
     CDCDSerialDriver_Initialize();
     
@@ -396,26 +524,47 @@ void USB_Init(void)
     // Connect pull-up, wait for configuration
     USBD_Connect();
 
-    Init_Bulk_FIFO();
-    
-    //while ( USBD_GetState() < USBD_STATE_CONFIGURED );
-    
-    // Start receiving data on the USB
-    
-    /*
-    CDCDSerialDriver_Read(  usbBufferBulkOut,
-                            USBDATAEPSIZE,
-                            (TransferCallback) UsbDataReceived,
-                            0);    
-    
-    CDCDSerialDriver_Write( usbBufferBulkIn,
-                            504,//USBDATAEPSIZE,
-                            (TransferCallback) UsbDataTransmit,
-                            0);
-    */
+    Init_Bulk_FIFO();    
  
-    LED_Clear(USBD_LEDUDATA); 
+    //LED_Clear(USBD_LEDDATA); 
+    
     printf("Done\r\n");
     
 }
 
+
+void Init_USB_Callback( void )
+{
+    
+    //delay_ms(1000);
+    
+    if ( (USBD_GetState() < USBD_STATE_CONFIGURED)  ||  USBState  ) {
+        return;
+    }
+    
+    USBState = true ;
+    
+    // Start receiving data on the USB
+         
+    printf("\r\nInit USB Callback()\r\n");
+    AT91C_BASE_US1->US_CR     = AT91C_US_RXEN;
+    CDCDSerialDriver_WriteCMD( usbCmdBufferBulkIn,
+                            USBCMDDATAEPSIZE,
+                            (TransferCallback) UsbCmdDataTransmit,
+                            0);
+    
+    AT91C_BASE_US1->US_CR     = AT91C_US_TXEN;
+    CDCDSerialDriver_ReadCMD(  usbCmdBufferBulkOut,
+                            USBCMDDATAEPSIZE,
+                            (TransferCallback) UsbCmdDataReceived,
+                            0); 
+    
+  
+    
+
+    
+    
+    //AT91C_BASE_US1->US_IER    = AT91C_US_ENDRX | AT91C_US_TIMEOUT; 
+    
+    
+}

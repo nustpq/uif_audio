@@ -79,8 +79,7 @@ void USART_SetTransmitterEnabled(AT91S_USART *usart,
     if (enabled) {
 
         usart->US_CR = AT91C_US_TXEN;
-    }
-    else {
+    } else {
 
         usart->US_CR = AT91C_US_TXDIS;
     }
@@ -97,8 +96,7 @@ void USART_SetReceiverEnabled(AT91S_USART *usart,
     if (enabled) {
 
         usart->US_CR = AT91C_US_RXEN;
-    }
-    else {
+    } else {
 
         usart->US_CR = AT91C_US_RXDIS;
     }
@@ -226,7 +224,9 @@ unsigned char USART_ReadBuffer(AT91S_USART *usart,
         usart->US_RPR = (unsigned int) buffer;
         usart->US_RCR = size;
         usart->US_PTCR = AT91C_PDC_RXTEN;
-
+        
+        usart->US_IER  = AT91C_US_ENDRX; //PQ
+        
         return 1;
     }
     // Check if the second PDC bank is free

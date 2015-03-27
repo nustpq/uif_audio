@@ -757,12 +757,12 @@ void UDPD_IrqHandler(void)
     unsigned char numIT;
     static unsigned int usb_frame_counter = 0 ;
    
-    /*
+   
     if (deviceState >= USBD_STATE_POWERED) {
-        //LED_Set(USBD_LEDUSB);
+        //LED_Set(USBD_LEDDATA);
         LED_SET_DATA;
     }
-    */
+    
   
     // Get interrupts status
     status = AT91C_BASE_UDPHS->UDPHS_INTSTA & AT91C_BASE_UDPHS->UDPHS_IEN;
@@ -795,8 +795,8 @@ void UDPD_IrqHandler(void)
             // Pull-Up must be connected
             // Transceiver must be disabled
 
-            LED_Clear(USBD_LEDUSB);
-
+            LED_Clear(USBD_LEDPOWER);
+            LED_Clear(USBD_LEDDATA);
             UDPHS_DisableBIAS();
 
             // Enable wakeup
@@ -908,6 +908,14 @@ void UDPD_IrqHandler(void)
                 if ((status & (1 << SHIFT_DMA << 2)) != 0) { 
                         UDPHS_DmaHandler(2);                    
                 }
+                
+                if ((status & (1 << SHIFT_DMA << 3)) != 0) { 
+                        UDPHS_DmaHandler(3);                    
+                }
+                
+                if ((status & (1 << SHIFT_DMA << 4)) != 0) { 
+                        UDPHS_DmaHandler(4);                    
+                }
 ///////////////////                
 /*
                 numIT = 1;
@@ -949,18 +957,18 @@ void UDPD_IrqHandler(void)
         
     }
     
-    /*
+   
     if (deviceState >= USBD_STATE_POWERED) {
 
-        //LED_Clear(USBD_LEDUSB);
+        //LED_Clear(USBD_LEDDATA);
         LED_CLEAR_DATA;
     }
-    */
-    
-    if( (usb_frame_counter++ & 0xFF) == 0 ) {         
-        LED_TOGGLE_DATA; //LED_Toggle(USBD_LEDUDATA);  
+   
+    /*
+    if( (usb_frame_counter++ & 0x01) == 0 ) {         
+        LED_TOGGLE_DATA; //LED_Toggle(USBD_LEDDATA);  
     }
-    
+    */
 
 }
 
@@ -1226,7 +1234,7 @@ char USBD_Read( unsigned char    bEndpoint,
   
     // Return if the endpoint is not in IDLE state
     if (pEndpoint->state != UDP_ENDPOINT_IDLE) {
-      printf("g");
+        printf("<EP:%d>",bEndpoint); //PQ
         return USBD_STATUS_LOCKED;
     } else {
    // printf("r");
@@ -1658,6 +1666,7 @@ void USBD_Test( unsigned char bIndex )
             break;
     }
     TRACE_DEBUG_WP("\n\r");
+    
 }
 
 

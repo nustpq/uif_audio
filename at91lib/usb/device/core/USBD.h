@@ -115,15 +115,16 @@
 ///
 /// !LEDs
 /// - USBD_LEDPOWER
-/// - USBD_LEDUSB
+/// - USBD_LEDDATA
 /// - USBD_LEDOTHER
 
-/// LED for indicating that the device is powered.
-#define USBD_LEDPOWER                   0
-/// LED for indicating USB activity.
-#define USBD_LEDUSB                     1
-/// LED for custom usage.
-#define USBD_LEDOTHER                   2
+//pls remove to led.h defines
+///// LED for indicating that the device is powered.
+//#define USBD_LEDPOWER                   0
+///// LED for indicating USB activity.
+//#define USBD_LEDDATA                    1
+///// LED for custom usage.
+//#define USBD_LEDOTHER                   2
 //------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------

@@ -56,17 +56,18 @@
 
 
 #define USBD_LEDPOWER                   0  //LED402, LED404  power status  PA28
-#define USBD_LEDUDATA                   1  //LED401, LED403   data status  PA29
+#define USBD_LEDDATA                    1  //LED401, LED403   data status  PA29
 #define USBD_LEDOTHER                   2
-//used for fast execution in ISR          
-#define  LED_SET_POWER     { *(volatile unsigned int *)0x400E0C34 = 1 << 5;}  //set power led          
-#define  LED_CLEAR_POWER   { *(volatile unsigned int *)0x400E0C30 = 1 << 5;}  //clear power led
-#define  LED_SET_DATA      { *(volatile unsigned int *)0x400E0C34 = 1 << 6;}  //set data led
-#define  LED_CLEAR_DATA    { *(volatile unsigned int *)0x400E0C30 = 1 << 6;}  //clear data led
-#define  LED_TOGGLE_DATA   { if( *(volatile unsigned int *)0x400E0C38 & (1 << 6) ){\
-                                *(volatile unsigned int *)0x400E0C34 = 1 << 6;\
+//used for fast execution in ISR 
+//for UIF2.0 reverted transistor
+#define  LED_CLEAR_POWER   { *(volatile unsigned int *)0x400E0C34 = 1 << 2;}  //set power led          
+#define  LED_SET_POWER     { *(volatile unsigned int *)0x400E0C30 = 1 << 2;}  //clear power led
+#define  LED_CLEAR_DATA    { *(volatile unsigned int *)0x400E0C34 = 1 << 3;}  //set data led
+#define  LED_SET_DATA      { *(volatile unsigned int *)0x400E0C30 = 1 << 3;}  //clear data led
+#define  LED_TOGGLE_DATA   { if( *(volatile unsigned int *)0x400E0C38 & (1 << 3) ){\
+                                *(volatile unsigned int *)0x400E0C34 = 1 << 3;\
                              } else {\
-                                *(volatile unsigned int *)0x400E0C30 = 1 << 6;\
+                                *(volatile unsigned int *)0x400E0C30 = 1 << 3;\
                              }} 
 
 

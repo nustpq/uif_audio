@@ -47,6 +47,6 @@
 void USBDDriverCallbacks_ConfigurationChanged(unsigned char cfgnum)
 {
     TRACE_INFO_WP("ConfigurationChanged ");
-    LED_Clear(USBD_LEDUSB);
+    LED_Clear(USBD_LEDDATA);
 }
 

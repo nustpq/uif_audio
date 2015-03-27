@@ -109,6 +109,18 @@ extern unsigned char CDCDSerialDriver_Read(
     TransferCallback callback,
     void *argument);
 
+extern unsigned char CDCDSerialDriver_WriteCMD(
+    void *data,
+    unsigned int size,
+    TransferCallback callback,
+    void *argument);
+
+extern unsigned char CDCDSerialDriver_ReadCMD(
+    void *data,
+    unsigned int size,
+    TransferCallback callback,
+    void *argument);
+
 extern unsigned short CDCDSerialDriver_GetSerialState();
 
 extern void CDCDSerialDriver_SetSerialState(unsigned short serialState);

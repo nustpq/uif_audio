@@ -125,8 +125,8 @@
 
 
 
-
 /* memory mapping struct for Nested Vectored Interrupt Controller (NVIC) */
+
 typedef struct
 {
   __IO uint32_t ISER[8];                      /*!< Interrupt Set Enable Register            */
@@ -143,6 +143,23 @@ typedef struct
        uint32_t RESERVED5[644];
   __O  uint32_t STIR;                         /*!< Software Trigger Interrupt Register      */
 }  NVIC_Type;
+
+//typedef struct
+//{
+//  __IO uint32_t ISER[1];                      /*!< Interrupt Set Enable Register            */
+//       uint32_t RESERVED0[31];
+//  __IO uint32_t ICER[1];                      /*!< Interrupt Clear Enable Register          */
+//       uint32_t RSERVED1[31];
+//  __IO uint32_t ISPR[1];                      /*!< Interrupt Set Pending Register           */
+//       uint32_t RESERVED2[31];
+//  __IO uint32_t ICPR[1];                      /*!< Interrupt Clear Pending Register         */
+//       uint32_t RESERVED3[31];
+//  __IO uint32_t IABR[1];                      /*!< Interrupt Active bit Register            */
+//       uint32_t RESERVED4[63];
+//  __IO uint8_t  IP[240];                      /*!< Interrupt Priority Register, 8Bit wide   */
+//       uint32_t RESERVED5[644];
+//  __O  uint32_t STIR;                         /*!< Software Trigger Interrupt Register      */
+//}  NVIC_Type;
 
 
 /* memory mapping struct for System Control Block */
@@ -1082,6 +1099,7 @@ static __INLINE void NVIC_SetPriorityGrouping(uint32_t priority_grouping)
 static __INLINE void NVIC_EnableIRQ(IRQn_Type IRQn)
 {
   NVIC->ISER[((uint32_t)(IRQn) >> 5)] = (1 << ((uint32_t)(IRQn) & 0x1F));                             /* enable interrupt */
+  //NVIC->ISER[0] = (1 << ((uint32_t)(IRQn) & 0x1F));//PQ modified
 }
 
 /**
@@ -1096,6 +1114,7 @@ static __INLINE void NVIC_EnableIRQ(IRQn_Type IRQn)
 static __INLINE void NVIC_DisableIRQ(IRQn_Type IRQn)
 {
   NVIC->ICER[((uint32_t)(IRQn) >> 5)] = (1 << ((uint32_t)(IRQn) & 0x1F));                             /* disable interrupt */
+  //NVIC->ICER[0] = (1 << ((uint32_t)(IRQn) & 0x1F));//PQ modified
 }
 
 /**
@@ -1111,6 +1130,7 @@ static __INLINE void NVIC_DisableIRQ(IRQn_Type IRQn)
 static __INLINE IRQn_Type NVIC_GetPendingIRQ(IRQn_Type IRQn)
 {
   return((IRQn_Type) (NVIC->ISPR[(uint32_t)(IRQn) >> 5] & (1 << ((uint32_t)(IRQn) & 0x1F))));         /* Return Interrupt bit or 'zero' */
+  //return((IRQn_Type) (NVIC->ISPR[0] & (1 << ((uint32_t)(IRQn) & 0x1F))));//PQ modified
 }
 
 /**
@@ -1125,6 +1145,7 @@ static __INLINE IRQn_Type NVIC_GetPendingIRQ(IRQn_Type IRQn)
 static __INLINE void NVIC_SetPendingIRQ(IRQn_Type IRQn)
 {
   NVIC->ISPR[((uint32_t)(IRQn) >> 5)] = (1 << ((uint32_t)(IRQn) & 0x1F));                             /* set interrupt pending */
+  //NVIC->ISPR[0] = (1 << ((uint32_t)(IRQn) & 0x1F)); //PQ modified
 }
 
 /**
@@ -1139,6 +1160,7 @@ static __INLINE void NVIC_SetPendingIRQ(IRQn_Type IRQn)
 static __INLINE void NVIC_ClearPendingIRQ(IRQn_Type IRQn)
 {
   NVIC->ICPR[((uint32_t)(IRQn) >> 5)] = (1 << ((uint32_t)(IRQn) & 0x1F));                             /* Clear pending interrupt */
+  //NVIC->ICPR[0] = (1 << ((uint32_t)(IRQn) & 0x1F));//PQ modified
 }
 
 /**
@@ -1154,6 +1176,7 @@ static __INLINE void NVIC_ClearPendingIRQ(IRQn_Type IRQn)
 static __INLINE IRQn_Type NVIC_GetActive(IRQn_Type IRQn)
 {
   return((IRQn_Type)(NVIC->IABR[(uint32_t)(IRQn) >> 5] & (1 << ((uint32_t)(IRQn) & 0x1F))));                        /* Return Interruptnumber or 'zero' */
+  //return((IRQn_Type)(NVIC->IABR[0] & (1 << ((uint32_t)(IRQn) & 0x1F))));  //PQ modified                       
 }
 
 /**

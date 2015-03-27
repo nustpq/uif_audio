@@ -34,6 +34,7 @@
 #include <usart/usart.h>
 #include <usb/device/cdc-serial/CDCDSerialDriverDescriptors.h>
 #include "kfifo.h"
+#include "led.h"
 #include <usb.h>
 #include <app.h>
 #include <dbgu/dbgu.h>
@@ -47,34 +48,39 @@ int main( void )
 
     TRACE_CONFIGURE( DBGU_STANDARD, 115200, BOARD_MCK );    
     printf("\r\n--------------------------------------------------\r\n");
-    printf("-- iSAM Audio Bridge Project  --\r\n");
-    printf("-- HW version: %s --\r\n", BOARD_NAME);
-    printf("-- SW version: %s --\r\n", fw_version);
-    printf("   BOARD_MCK = %dMHz\r\n", BOARD_MCK/1000000);
-    printf("   USBEPSize = %d B, PlayPreBuffer = %d ms\r\n", USBDATAEPSIZE, 1<<PLAY_BUF_DLY_N);
-    printf("-- Compiled: %s %s by PQ--\r\n", __DATE__, __TIME__);
+    printf("--  Unified Interface Board - Audio\r\n");    
+    printf("--  CPU [ATSAM3U4C][%dMHz][%X]\r\n", BOARD_MCK/1000000, AT91C_BASE_NVIC->NVIC_CPUID);
+    printf("--  HW version: %s\r\n", BOARD_NAME);
+    printf("--  SW version: %s\r\n", fw_version);    
+    printf("    UsbEpSize = %d B, PlayPreBuffer = %d ms\r\n", USBDATAEPSIZE, 1<<PLAY_BUF_DLY_N);
+    printf("--  Compiled on %s %s by PQ--\r\n", __DATE__, __TIME__);
     printf("--------------------------------------------------\r\n");
+    
+    LED_Configure(USBD_LEDPOWER);
+    LED_Configure(USBD_LEDDATA);
     
     Timer0_Init(); 
     Timer1_Init();
     Timer2_Init();
     SysTick_Init();
-    UART_Init();
+    UART0_Init();   
  
 #ifdef METHOD_BY_RESET_MCU
     USART_Write( AT91C_BASE_US0, 0, 0 ); //Send ACK
     delay_ms(1000);
 #endif
     
-    USB_Init();
+    USB_Init();  
+    UART1_Init();
     I2S_Init();
-
+ 
     while(1) {
       
-        Debug_Info(); 
+        //Debug_Info(); 
         Check_UART_CMD();
         Audio_State_Control();
         DBGUART_Service();
+        Init_USB_Callback();
       
     }
     

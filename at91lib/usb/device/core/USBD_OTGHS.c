@@ -673,7 +673,7 @@ void UDPD_IrqHandler(void)
 
     if (deviceState >= USBD_STATE_POWERED) {
 
-        LED_Set(USBD_LEDUSB);
+        LED_Set(USBD_LEDDATA);
     }
 
     // Get interrupts status
@@ -728,7 +728,7 @@ void UDPD_IrqHandler(void)
             //      Pull-Up must be connected
             //      Transceiver must be disabled
 
-            LED_Clear(USBD_LEDUSB);
+            LED_Clear(USBD_LEDDATA);
 
             // Enable wakeup
             AT91C_BASE_OTGHS->OTGHS_DEVIER = AT91C_OTGHS_EORST | AT91C_OTGHS_WAKEUP | AT91C_OTGHS_EORSM;
@@ -867,7 +867,7 @@ void UDPD_IrqHandler(void)
 
     if (deviceState >= USBD_STATE_POWERED) {
 
-       // LED_Clear(USBD_LEDUSB);
+       // LED_Clear(USBD_LEDDATA);
     }
 }
 

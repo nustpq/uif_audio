@@ -79,7 +79,9 @@ typedef struct {
     const unsigned char **pStrings;
     /// Number of string descriptors in list.
     unsigned char numStrings;
-
+    
+    //const unsigned char *pOSExtendedCompIDDescriptor; //PQ added
+    
 } USBDDriverDescriptors;
 
 #endif //#ifndef USBDDRIVERDESCRIPTORS_H

@@ -129,6 +129,9 @@
 #define USBGenericRequest_SETINTERFACE          11
 /// SYNCH_FRAME request code.
 #define USBGenericRequest_SYNCHFRAME            12
+
+#define USBGenericRequest_GET_MS_DESCRIPTOR     13
+          
 //------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------

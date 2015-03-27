@@ -239,6 +239,18 @@ unsigned char CDCDSerialDriver_Read(void *data,
                      argument);
 }
 
+unsigned char CDCDSerialDriver_ReadCMD(void *data,
+                                    unsigned int size,
+                                    TransferCallback callback,
+                                    void *argument)
+{
+
+    return USBD_Read(CDCDSerialDriverDescriptors_CMDDATAOUT,
+                     data,
+                     size,
+                     callback,
+                     argument);
+}
 //------------------------------------------------------------------------------
 /// Sends a data buffer through the virtual COM port created by the CDC
 /// device serial driver. This function behaves exactly like USBD_Write.
@@ -264,6 +276,19 @@ unsigned char CDCDSerialDriver_Write(void *data,
                       argument);
 }
 
+unsigned char CDCDSerialDriver_WriteCMD(void *data,
+                                     unsigned int size,
+                                     TransferCallback callback,
+                                     void *argument)
+{
+    
+    
+    return USBD_Write(CDCDSerialDriverDescriptors_CMDDATAIN,
+                      data,
+                      size,
+                      callback,
+                      argument);
+}
 //------------------------------------------------------------------------------
 /// Returns the current status of the RS-232 line.
 //------------------------------------------------------------------------------

@@ -47,8 +47,8 @@ void USBDCallbacks_Resumed(void)
 {
     // Initialize LEDs
     //LED_Configure(USBD_LEDPOWER); //moved to USB_Init()
-    //LED_Configure(USBD_LEDUSB);
-   LED_Set(USBD_LEDPOWER);    
-   LED_Clear(USBD_LEDUSB);
+    //LED_Configure(USBD_LEDDATA);
+    //LED_Set(USBD_LEDPOWER);    
+    //LED_Clear(USBD_LEDDATA);
 }
 

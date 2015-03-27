@@ -202,8 +202,6 @@ void dump_buf_debug( unsigned char *pChar, unsigned int size)
 
 
 
-
-
 /*
 *********************************************************************************************************
 *                                    HDMA_IrqHandler()
@@ -252,7 +250,7 @@ void HDMA_IrqHandler(void)
             kfifo_get(&bulkin_fifo, usbBufferBulkIn, USBDATAEPSIZE);            
             CDCDSerialDriver_Write(  usbBufferBulkIn,
                                      USBDATAEPSIZE,
-                                    (TransferCallback) UsbDataTransmit,
+                                    (TransferCallback) UsbAudioDataTransmit,
                                      0);            
         }                           
     } 
@@ -338,7 +336,7 @@ void HDMA_IrqHandler(void)
             error_bulkout_full++;
             CDCDSerialDriver_Read(   usbBufferBulkOut,
                                      USBDATAEPSIZE,
-                                     (TransferCallback) UsbDataReceived,
+                                     (TransferCallback) UsbAudioDataReceived,
                                      0);
        }      
     } 

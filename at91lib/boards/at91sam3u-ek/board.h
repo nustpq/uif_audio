@@ -81,7 +81,7 @@
 /// - BOARD_NAME
 
 /// Name of the board.
-#define BOARD_NAME "iSAM AudioBridge-01"
+#define BOARD_NAME "[UIF 2.0 Board]"
 /// Board definition.
 #define at91sam3uek
 //------------------------------------------------------------------------------
@@ -306,9 +306,9 @@
 
 
 /// LED #0 pin definition.
-#define PIN_LED_0   {1 << 5, AT91C_BASE_PIOA, AT91C_ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT}
+#define PIN_LED_0   {1 << 2, AT91C_BASE_PIOA, AT91C_ID_PIOA, PIO_OUTPUT_0, PIO_DEFAULT}
 /// LED #1 pin definition.
-#define PIN_LED_1   {1 << 6, AT91C_BASE_PIOA, AT91C_ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT}
+#define PIN_LED_1   {1 << 3, AT91C_BASE_PIOA, AT91C_ID_PIOA, PIO_OUTPUT_0, PIO_DEFAULT}
  /// List of all LEDs definitions.
 #define PINS_LEDS   PIN_LED_0, PIN_LED_1 
 
@@ -400,9 +400,9 @@
 #define PIN_USART1_TXD    {0x1 << 20, AT91C_BASE_PIOA, AT91C_ID_PIOA, PIO_PERIPH_A, PIO_DEFAULT}
 #define PIN_USART1_CTS    {0x1 << 23, AT91C_BASE_PIOA, AT91C_ID_PIOA, PIO_PERIPH_B, PIO_DEFAULT}
 #define PIN_USART1_RTS    {0x1 << 22, AT91C_BASE_PIOA, AT91C_ID_PIOA, PIO_PERIPH_B, PIO_DEFAULT}
-#define PIN_USART1_SCK    {0x1 << 24, AT91C_BASE_PIOA, AT91C_ID_PIOA, PIO_PERIPH_B, PIO_DEFAULT}
+//#define PIN_USART1_SCK    {0x1 << 24, AT91C_BASE_PIOA, AT91C_ID_PIOA, PIO_PERIPH_B, PIO_DEFAULT}
 
-/// USB VBus monitoring pin definition.
+/// USB VBus monitoring pin definition. 
 #define PIN_USB_VBUS    {1 << 0, AT91C_BASE_PIOA, AT91C_ID_PIOA, PIO_INPUT,    PIO_DEFAULT}
 #define PIN_USB_PULLUP  {1 << 8, AT91C_BASE_PIOA, AT91C_ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT}
 //------------------------------------------------------------------------------

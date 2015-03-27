@@ -22,6 +22,8 @@
 /// Basic asynchronous mode, i.e. 8 bits no parity.
 #define USART_MODE_ASYNCHRONOUS (AT91C_US_CHRL_8_BITS | AT91C_US_PAR_NONE)
 
+#define USART_MODE_ASYNCHRONOUS_HW (AT91C_US_CHRL_8_BITS | AT91C_US_PAR_NONE | AT91C_US_USMODE_HWHSH)
+
 /// IRDA mode
 #define USART_MODE_IRDA         (AT91C_US_USMODE_IRDA | AT91C_US_CHRL_8_BITS | AT91C_US_PAR_NONE | AT91C_US_FILTER)
 //------------------------------------------------------------------------------

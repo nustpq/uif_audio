@@ -32,8 +32,11 @@
 //------------------------------------------------------------------------------
 
 #include "USBDCallbacks.h"
+#include "USBD.h"
+#include <utility/led.h>
 
 extern volatile unsigned char Toggle_PID_BI ;
+
 //------------------------------------------------------------------------------
 //         Exported function
 //------------------------------------------------------------------------------
@@ -45,5 +48,7 @@ void USBDCallbacks_Reset(void)
 {
     // Does nothing
     //Toggle_PID_BI = 0; //reset PID
+    LED_Set(USBD_LEDPOWER);    
+    LED_Clear(USBD_LEDDATA);
 }
 
