@@ -61,8 +61,8 @@
 
 
 
-volatile unsigned char usartBuffers[2][UART_BUFFER_SIZE] ;
-volatile unsigned char usartCurrentBuffer = 0 ;
+volatile unsigned char usart0Buffers[2][UART_BUFFER_SIZE] ;
+volatile unsigned char usart0CurrentBuffer = 0 ;
 
 
 static const Pin Uart0_Pins[] = {  
@@ -212,16 +212,16 @@ void USART0_IrqHandler( void )
     // Buffer has been read successfully
     if ( status & AT91C_US_ENDRX ) {  
         data_received = UART_BUFFER_SIZE;
-        usartCurrentBuffer = 1 - usartCurrentBuffer; //pingpong buffer index
-        USART_ReadBuffer( AT91C_BASE_US0,(void *)usartBuffers[usartCurrentBuffer], UART_BUFFER_SIZE); // Restart read on buffer
+        usart0CurrentBuffer = 1 - usart0CurrentBuffer; //pingpong buffer index
+        USART_ReadBuffer( AT91C_BASE_US0,(void *)usart0Buffers[usart0CurrentBuffer], UART_BUFFER_SIZE); // Restart read on buffer
 
     }
     
     if ( status & AT91C_US_TIMEOUT ) {  
         data_received = UART_BUFFER_SIZE - ( AT91C_BASE_US0->US_RCR );
         AT91C_BASE_US0->US_RCR = 0;   
-        usartCurrentBuffer = 1 - usartCurrentBuffer;
-        USART_ReadBuffer(AT91C_BASE_US0,(void *)usartBuffers[usartCurrentBuffer], UART_BUFFER_SIZE);    // Restart read on buffer
+        usart0CurrentBuffer = 1 - usart0CurrentBuffer;
+        USART_ReadBuffer(AT91C_BASE_US0,(void *)usart0Buffers[usart0CurrentBuffer], UART_BUFFER_SIZE);    // Restart read on buffer
         AT91C_BASE_US0->US_CR   = AT91C_US_STTTO; //restart timeout counter
         AT91C_BASE_US0->US_RTOR = UART_TIMEOUT_BIT;
     
@@ -267,9 +267,10 @@ void USART1_IrqHandler( void )
         //AT91C_BASE_US1->US_PTCR  =  AT91C_PDC_TXTDIS; //stop PDC
         
         //temp = kfifo_get_data_size(&bulkout_fifo_cmd);  
-        counter = kfifo_get( &bulkout_fifo_cmd, (unsigned char *)UARTBuffersOut, UART1_BUFFER_SIZE);
+        counter = kfifo_get( &bulkout_fifo_cmd, (unsigned char *)UARTBuffersOut, UART_OUT_BUFFER_SIZE);
+        //dump_buf_debug((unsigned char *)UARTBuffersOut,counter);
         if( counter ) {
-            //USART_WriteBuffer( AT91C_BASE_US1,(void *)UARTBuffersOut, UART1_BUFFER_SIZE);
+            //USART_WriteBuffer( AT91C_BASE_US1,(void *)UARTBuffersOut, UART_OUT_BUFFER_SIZE);
             AT91C_BASE_US1->US_TPR = (unsigned int)UARTBuffersOut;
             AT91C_BASE_US1->US_TCR = counter;
             AT91C_BASE_US1->US_PTCR= AT91C_PDC_TXTEN;//start PDC
@@ -297,12 +298,12 @@ void USART1_IrqHandler( void )
         //AT91C_BASE_US1->US_IDR   =  AT91C_US_ENDRX  ; //disable PDC tx INT
         //AT91C_BASE_US1->US_PTCR  =  AT91C_PDC_RXTDIS; //stop PDC
         
-        kfifo_put(&bulkin_fifo_cmd, (unsigned char *)UARTBuffersIn, UART1_BUFFER_SIZE) ;
-        //dump_buf_debug((unsigned char *)UARTBuffersIn,UART1_BUFFER_SIZE);
-        if(  UART1_BUFFER_SIZE < kfifo_get_free_space( &bulkin_fifo_cmd ) ) {
-            //USART_ReadBuffer( AT91C_BASE_US1,(void *)UARTBuffersIn, UART1_BUFFER_SIZE); // Restart read on buffer 
+        kfifo_put(&bulkin_fifo_cmd, (unsigned char *)UARTBuffersIn, UART_IN_BUFFER_SIZE) ;
+        //dump_buf_debug((unsigned char *)UARTBuffersIn,UART_IN_BUFFER_SIZE);
+        if(  UART_IN_BUFFER_SIZE < kfifo_get_free_space( &bulkin_fifo_cmd ) ) {
+            //USART_ReadBuffer( AT91C_BASE_US1,(void *)UARTBuffersIn, UART_IN_BUFFER_SIZE); // Restart read on buffer 
             AT91C_BASE_US1->US_RPR  = (unsigned int)UARTBuffersIn;
-            AT91C_BASE_US1->US_RCR  = UART1_BUFFER_SIZE;
+            AT91C_BASE_US1->US_RCR  = UART_IN_BUFFER_SIZE;
             AT91C_BASE_US1->US_PTCR = AT91C_PDC_RXTEN;
             AT91C_BASE_US1->US_IER  = AT91C_US_ENDRX | AT91C_US_TIMEOUT; //PQ
         } else {
@@ -324,12 +325,12 @@ void USART1_IrqHandler( void )
     
     if ( status & AT91C_US_TIMEOUT ) {  
         //printf(" iRt.");
-        kfifo_put(&bulkin_fifo_cmd, (unsigned char *)UARTBuffersIn, UART1_BUFFER_SIZE - ( AT91C_BASE_US1->US_RCR )) ;
-        //dump_buf_debug((unsigned char *)UARTBuffersIn,UART1_BUFFER_SIZE- ( AT91C_BASE_US1->US_RCR ));
-        if(  UART1_BUFFER_SIZE < kfifo_get_free_space( &bulkin_fifo_cmd ) ) {
-            //USART_ReadBuffer( AT91C_BASE_US1,(void *)UARTBuffersIn, UART1_BUFFER_SIZE); // Restart read on buffer 
+        kfifo_put(&bulkin_fifo_cmd, (unsigned char *)UARTBuffersIn, UART_IN_BUFFER_SIZE - ( AT91C_BASE_US1->US_RCR )) ;
+        //dump_buf_debug((unsigned char *)UARTBuffersIn,UART_IN_BUFFER_SIZE- ( AT91C_BASE_US1->US_RCR ));
+        if(  UART_IN_BUFFER_SIZE < kfifo_get_free_space( &bulkin_fifo_cmd ) ) {
+            //USART_ReadBuffer( AT91C_BASE_US1,(void *)UARTBuffersIn, UART_IN_BUFFER_SIZE); // Restart read on buffer 
             AT91C_BASE_US1->US_RPR  = (unsigned int)UARTBuffersIn;
-            AT91C_BASE_US1->US_RCR  = UART1_BUFFER_SIZE;
+            AT91C_BASE_US1->US_RCR  = UART_IN_BUFFER_SIZE;
             AT91C_BASE_US1->US_PTCR = AT91C_PDC_RXTEN;
             AT91C_BASE_US1->US_CR   = AT91C_US_STTTO; //restart timeout counter
             AT91C_BASE_US1->US_RTOR = UART_TIMEOUT_BIT;
@@ -339,18 +340,21 @@ void USART1_IrqHandler( void )
             uartin_start_cmd = true; 
         }
         //AT91C_BASE_US1->US_RCR = 0;
-        //USART_ReadBuffer( AT91C_BASE_US1,(void *)UARTBuffersIn, UART1_BUFFER_SIZE); // Restart read on buffer
-       
-      
-        if ( bulkin_start_cmd  && ( USBCMDDATAEPSIZE <= kfifo_get_data_size(&bulkin_fifo_cmd)) ) {    
-            bulkin_start_cmd = false ;
-            //error_bulkin_empt++;
-            //printf("[%d] ",kfifo_get_data_size(&bulkin_fifo_cmd));
-            kfifo_get(&bulkin_fifo_cmd, usbCmdBufferBulkIn, USBCMDDATAEPSIZE);            
-            CDCDSerialDriver_WriteCMD(  usbCmdBufferBulkIn,
-                                        USBCMDDATAEPSIZE,
-                                        (TransferCallback) UsbCmdDataTransmit,
-                                        0);            
+        //USART_ReadBuffer( AT91C_BASE_US1,(void *)UARTBuffersIn, UART_IN_BUFFER_SIZE); // Restart read on buffer
+        
+        if ( bulkin_start_cmd ) {
+            counter = kfifo_get_data_size(&bulkin_fifo_cmd) ;
+            if( counter ) {     
+                bulkin_start_cmd = false ;
+                //error_bulkin_empt++;
+                //printf("[%d] ",kfifo_get_data_size(&bulkin_fifo_cmd));
+                counter = USBCMDDATAEPSIZE < counter ? USBCMDDATAEPSIZE : counter;
+                kfifo_get(&bulkin_fifo_cmd, usbCmdBufferBulkIn, counter);            
+                CDCDSerialDriver_WriteCMD(  usbCmdBufferBulkIn,
+                                            counter,
+                                            (TransferCallback) UsbCmdDataTransmit,
+                                            0);
+            }
        }       
     
     }
@@ -378,7 +382,7 @@ void UART0_Init( void )
     printf("\r\nInit UART0 ...");  
     
     PIO_Configure(Uart0_Pins, PIO_LISTSIZE(Uart0_Pins));    
-    usartCurrentBuffer = 0 ;
+    usart0CurrentBuffer = 0 ;
     
     // Configure USART0¡¡¡¡//Comm with mcu  
     AT91C_BASE_PMC->PMC_PCER   = 1 << AT91C_ID_US0;
@@ -390,7 +394,7 @@ void UART0_Init( void )
     AT91C_BASE_US0->US_TCR  = 0;
     AT91C_BASE_US0->US_RCR  = 0;
     
-    USART_ReadBuffer(AT91C_BASE_US0,(void *)usartBuffers[usartCurrentBuffer],UART_BUFFER_SIZE);   
+    USART_ReadBuffer(AT91C_BASE_US0,(void *)usart0Buffers[usart0CurrentBuffer],UART_BUFFER_SIZE);   
     IRQ_ConfigureIT(AT91C_ID_US0, UART_PRIORITY, USART0_IrqHandler); //priority chaned to max?
     IRQ_EnableIT(AT91C_ID_US0);  
     
@@ -431,11 +435,11 @@ void UART1_Init( void )
     AT91C_BASE_US1->US_TCR  = 0;
     AT91C_BASE_US1->US_RCR  = 0;
   
-    memset((unsigned char *)UARTBuffersOut, 0x55, UART1_BUFFER_SIZE);   
-    //USART_ReadBuffer( AT91C_BASE_US1,(void *)UARTBuffersIn[0],  UART1_BUFFER_SIZE);                           
-    //USART_ReadBuffer( AT91C_BASE_US1,(void *)UARTBuffersIn[1],  UART1_BUFFER_SIZE);  
-    //USART_WriteBuffer( AT91C_BASE_US1,(void *)UARTBuffersOut[0], UART1_BUFFER_SIZE);                             
-    //USART_WriteBuffer( AT91C_BASE_US1,(void *)UARTBuffersOut[1], UART1_BUFFER_SIZE); 
+    memset((unsigned char *)UARTBuffersOut, 0x55, UART_OUT_BUFFER_SIZE);   
+    //USART_ReadBuffer( AT91C_BASE_US1,(void *)UARTBuffersIn[0],  UART_IN_BUFFER_SIZE);                           
+    //USART_ReadBuffer( AT91C_BASE_US1,(void *)UARTBuffersIn[1],  UART_IN_BUFFER_SIZE);  
+    //USART_WriteBuffer( AT91C_BASE_US1,(void *)UARTBuffersOut[0], UART_OUT_BUFFER_SIZE);                             
+    //USART_WriteBuffer( AT91C_BASE_US1,(void *)UARTBuffersOut[1], UART_OUT_BUFFER_SIZE); 
     
     IRQ_ConfigureIT(AT91C_ID_US1, UART_PRIORITY, NULL ); 
     IRQ_EnableIT(AT91C_ID_US1);  
@@ -476,7 +480,7 @@ void Check_UART_CMD( void )
     data_received = 0;
     
     for( i = 0; i < counter; i++)  { //analyze the data          
-        pcInt( usartBuffers[1-usartCurrentBuffer][i] ) ;
+        pcInt( usart0Buffers[1-usart0CurrentBuffer][i] ) ;
         
     } 
     

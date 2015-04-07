@@ -395,11 +395,12 @@ void UsbCmdDataReceived(      unsigned int unused,
         }  
         
         //start UART send
-        if( uartout_start_cmd ) {
-            uartout_start_cmd = false;
-            counter = kfifo_get(&bulkout_fifo_cmd, (unsigned char *)UARTBuffersOut, UART1_BUFFER_SIZE) ;
+        if( uartout_start_cmd ) {            
+            counter = kfifo_get(&bulkout_fifo_cmd, (unsigned char *)UARTBuffersOut, UART_OUT_BUFFER_SIZE) ;
             //printf("[%d]:",counter) ;
+            //dump_buf_debug((unsigned char *)UARTBuffersOut,counter);
             if( counter ) { 
+                uartout_start_cmd = false;
                 AT91C_BASE_US1->US_TPR  = (unsigned int)UARTBuffersOut;
                 AT91C_BASE_US1->US_TCR  = counter;
                 AT91C_BASE_US1->US_PTCR = AT91C_PDC_TXTEN;//start PDC 
@@ -452,7 +453,7 @@ void UsbCmdDataTransmit(      unsigned int unused,
                                        USBCMDDATAEPSIZE,
                                        (TransferCallback) UsbCmdDataTransmit,
                                        0);       
-                    } else if( 0 < counter ){  //need optimize : what if last package data less than EP size
+        } else if( 0 < counter ){  //need optimize : what if last package data less than EP size
             kfifo_get(&bulkin_fifo_cmd, usbCmdBufferBulkIn, counter); 
         
             CDCDSerialDriver_WriteCMD( usbCmdBufferBulkIn,
@@ -466,11 +467,11 @@ void UsbCmdDataTransmit(      unsigned int unused,
         //start UART receive
         counter = kfifo_get_free_space(&bulkin_fifo_cmd); 
         
-        if( uartin_start_cmd && (UART1_BUFFER_SIZE <= counter) ) {           
+        if( uartin_start_cmd && (UART_IN_BUFFER_SIZE <= counter) ) {           
             uartin_start_cmd = false;            
             //printf("[%d]", counter) ;  
             AT91C_BASE_US1->US_RPR  = (unsigned int)UARTBuffersIn;
-            AT91C_BASE_US1->US_RCR  = UART1_BUFFER_SIZE;
+            AT91C_BASE_US1->US_RCR  = UART_IN_BUFFER_SIZE;
             AT91C_BASE_US1->US_PTCR = AT91C_PDC_RXTEN; 
             AT91C_BASE_US1->US_IER  = AT91C_US_ENDRX | AT91C_US_TIMEOUT; 
         } 
@@ -478,10 +479,10 @@ void UsbCmdDataTransmit(      unsigned int unused,
      
     }  else {
         
-        CDCDSerialDriver_WriteCMD( usbCmdBufferBulkIn,
-                                   USBCMDDATAEPSIZE,
-                                  (TransferCallback) UsbCmdDataTransmit,
-                                  0);  
+//        CDCDSerialDriver_WriteCMD( usbCmdBufferBulkIn,
+//                                   USBCMDDATAEPSIZE,
+//                                  (TransferCallback) UsbCmdDataTransmit,
+//                                  0);  
         TRACE_WARNING( "\r\nERROR : UsbCmdDataTransmit: Re-transfer hit\r\n" );  
         
     }    

@@ -354,10 +354,15 @@ static void GetMSDescriptor(
     const USBDeviceDescriptor *pDevice;
     const unsigned char *pDescriptor;
     // Use different set of descriptors depending on device speed
-   
-    pDescriptor = pDriver->pDescriptors->pStrings[5]; //OSExCompIDDescriptor
+    
+    if( index == Extended_Compat_ID ) {    
+        pDescriptor = pDriver->pDescriptors->pStrings[5]; //OSExCompIDDescriptor     
+        //printf("\r\n-Extended_Compat_ID");
+    } else if( index == Extended_Property ) {
+        pDescriptor = pDriver->pDescriptors->pStrings[6]; //Extended Properties Descriptor        
+        //printf("\r\n-Extended_Propertity");
+    }
     TRACE_DEBUG("HS ");
-     
 
    //printf("\r\n-length= %d",length);
    // Adjust length and send descriptor
@@ -575,12 +580,13 @@ void USBDDriver_RequestHandler(
 
             // Send the requested descriptor
             type = USBGetDescriptorRequest_GetDescriptorType(pRequest);
-            if( type != 0 ) {
+            if( type != 0 ) { //wValue high bytemust 
                 USBD_Stall(0);
             }
             type = USBGenericRequest_GetRecipient(pRequest);
             if( type != 0 ) {
-                USBD_Stall(0);
+                //USBD_Stall(0);
+                //printf("\r\nInterFace");
             }
             
             type  = USBGetDescriptorRequest_GetDescriptorIndex(pRequest); //Interface number

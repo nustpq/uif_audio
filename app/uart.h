@@ -15,11 +15,11 @@
 #define _UART_H_
 
 
-#define  RULER_CMD_SET_AUDIO_CFG        0x01
-#define  RULER_CMD_START_AUDIO          0x02
-#define  RULER_CMD_STOP_AUDIO           0x03
-#define  RULER_CMD_RESET_AUDIO          0x10
-#define  RULER_CMD_GET_AUDIO_VERSION    0x0B
+#define RULER_CMD_SET_AUDIO_CFG        0x01
+#define RULER_CMD_START_AUDIO          0x02
+#define RULER_CMD_STOP_AUDIO           0x03
+#define RULER_CMD_RESET_AUDIO          0x10
+#define RULER_CMD_GET_AUDIO_VERSION    0x0B
 
 #define CMD_STAT_SYNC1     0
 #define CMD_STAT_SYNC2     1
@@ -34,12 +34,11 @@
 
 
 
-#define UART_TIMEOUT_BIT     ( 5 * 10 ) // 50=5*10  timeout in 5 Bytes' time  
-#define UART_BUFFER_SIZE     ( 128    ) // uart buf size
-#define UART0_BAUD           ( 115200 )
+#define UART_TIMEOUT_BIT     ( 5 * 10  ) // 50=5*10  timeout in 5 Bytes' time  
+#define UART_BUFFER_SIZE     ( 128     ) // uart buf size
 
-#define UART1_BUFFER_SIZE    ( 128   )
-#define UART1_BAUD           ( 1000000)
+#define UART0_BAUD           (  115200 )
+#define UART1_BAUD           ( 1000000 )
 
 
 

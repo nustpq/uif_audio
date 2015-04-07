@@ -571,7 +571,7 @@ const unsigned char serialNumberDescriptor[] = {
     USBStringDescriptor_UNICODE('7')
 };
 
-// MS OS Descriptor
+// MS OS Descriptor for Win8.1
 const unsigned char OSStringDescriptor[] = {
 
     0x12,
@@ -613,6 +613,67 @@ const unsigned char OSExCompIDDescriptor[] = {
 };
 
 
+// MS OS Extended Property Descriptor
+const unsigned char OSExPropertyDescriptor[] = {
+
+    0x8E,0x00,0x00,0x00,  //length of descriptor
+    0x00, 0x01,//0x0100,  //bcd Version  1.0
+    0x05, 0x00,//0x0005,  //Extened property descriptor
+    0x01, 0x00,//number of customer propertity section
+       
+    0x84,0x00,0x00,0x00,  //length of this property
+    0x01,0x00,0x00,0x00,
+    0x28,0x00, //Length of the property name string is 40 bytes.
+    
+    //Property name is ¡°DeviceInterfaceGUID¡±.
+    0x44, 0x00 ,0x65 ,0x00 ,0x76 ,0x00 ,0x69 ,0x00 ,0x63 ,0x00 ,
+    0x65 ,0x00 ,0x49 ,0x00 ,0x6E ,0x00 ,0x74 ,0x00 ,0x65 ,0x00 ,
+    0x72 ,0x00 ,0x66 ,0x00 ,0x61 ,0x00 ,0x63 ,0x00 ,0x65 ,0x00 ,
+    0x47 ,0x00 ,0x55 ,0x00 ,0x49 ,0x00 ,0x44 ,0x00 ,0x00 ,0x00 , 
+        
+    0x4E ,0x00,0x00,0x00, //Length of the property value string is 78 bytes.
+    //"{cc22e4b4-7985-426a-87ea-6ee58f202136}"
+    USBStringDescriptor_UNICODE('{'),
+    USBStringDescriptor_UNICODE('c'),
+    USBStringDescriptor_UNICODE('c'),
+    USBStringDescriptor_UNICODE('2'),
+    USBStringDescriptor_UNICODE('2'),
+    USBStringDescriptor_UNICODE('e'),
+    USBStringDescriptor_UNICODE('4'),
+    USBStringDescriptor_UNICODE('b'),
+    USBStringDescriptor_UNICODE('4'),
+    USBStringDescriptor_UNICODE('-'),
+    USBStringDescriptor_UNICODE('7'),
+    USBStringDescriptor_UNICODE('9'),
+    USBStringDescriptor_UNICODE('8'),
+    USBStringDescriptor_UNICODE('5'),
+    USBStringDescriptor_UNICODE('-'),
+    USBStringDescriptor_UNICODE('4'),
+    USBStringDescriptor_UNICODE('2'),
+    USBStringDescriptor_UNICODE('6'),
+    USBStringDescriptor_UNICODE('a'),
+    USBStringDescriptor_UNICODE('-'),
+    USBStringDescriptor_UNICODE('8'),
+    USBStringDescriptor_UNICODE('7'),
+    USBStringDescriptor_UNICODE('e'),
+    USBStringDescriptor_UNICODE('a'),
+    USBStringDescriptor_UNICODE('-'),
+    USBStringDescriptor_UNICODE('6'),
+    USBStringDescriptor_UNICODE('e'),
+    USBStringDescriptor_UNICODE('e'),
+    USBStringDescriptor_UNICODE('5'),
+    USBStringDescriptor_UNICODE('8'),
+    USBStringDescriptor_UNICODE('f'),
+    USBStringDescriptor_UNICODE('2'),
+    USBStringDescriptor_UNICODE('0'),
+    USBStringDescriptor_UNICODE('2'),
+    USBStringDescriptor_UNICODE('1'),
+    USBStringDescriptor_UNICODE('3'),
+    USBStringDescriptor_UNICODE('6'),
+    USBStringDescriptor_UNICODE('}')
+    
+};
+
 /// List of string descriptors used by the device
 const unsigned char *stringDescriptors[] = {
 
@@ -621,7 +682,8 @@ const unsigned char *stringDescriptors[] = {
     productStringDescriptor,
     serialNumberDescriptor,
     OSStringDescriptor,
-    OSExCompIDDescriptor    
+    OSExCompIDDescriptor,
+    OSExPropertyDescriptor
     
 };
 
