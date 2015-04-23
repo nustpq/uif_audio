@@ -73,10 +73,13 @@
 
 typedef struct {
   
-  unsigned char type;//Rec: =0x00, Play: =0x01
-  unsigned char channel_num; //1~6
-  unsigned short int sample_rate;
-  unsigned char bit_length; // 16, 24, 32
+  unsigned char  type;//Rec: =0x00, Play: =0x01
+  unsigned char  channel_num; //1~8
+  unsigned short sample_rate;
+  unsigned char  bit_length; // 16, 24, 32
+  unsigned char  gpio_rec_num;
+  unsigned char  gpio_rec_start_index;
+  unsigned char  gpio_rec_bit_mask;
   
 }AUDIO_CFG;
 

@@ -571,7 +571,7 @@ unsigned char SSC_ReadBuffer_Start(  AT91S_SSC *ssc,
                                | AT91C_HDMA_SRC_ADDRESS_MODE_FIXED \
                                | AT91C_HDMA_FC_PER2MEM ; 
     LLI_CH2[0].descriptor    =  (unsigned int)&LLI_CH2[1] + 0;
-  
+    
     LLI_CH2[1].sourceAddress =  srcAddress;
     LLI_CH2[1].destAddress   =  destAddress_next;
     LLI_CH2[1].controlA      = (length>>DMA_CtrA_Len_Shift) | DMA_CtrA_Reg_Mode;

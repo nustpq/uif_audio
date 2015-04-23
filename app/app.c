@@ -50,7 +50,7 @@
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
-char fw_version[] = "[FW:A:V2.1]";
+char fw_version[] = "[FW:A:V2.2]";
 ////////////////////////////////////////////////////////////////////////////////
 
 //Buffer Level 1:  USB data stream buffer : 512 B
@@ -156,28 +156,55 @@ void Init_Bus_Matix( void )
 }
 
 
-
 /*
 *********************************************************************************************************
-*                                    Init_GPIO()
+*                                    Merge_GPIO_Data()
 *
-* Description :  Initialize LED GPIOs.
+* Description :  merge GPIO data to audio data package.
 * Argument(s) :  None.
 * Return(s)   :  None.
 *
 * Note(s)     : None.
 *********************************************************************************************************
 */
+static unsigned char global_rec_num               ;  //total TDM channels
+static unsigned char global_rec_gpio_mask         ; // gpio   to record 
+static unsigned char global_rec_gpio_num          ; //total gpio num to record
+static unsigned char global_rec_gpio_index        ;  //index gpio start at which TDM channel 
+static unsigned char global_rec_samples           ;  //samples per package of one interruption 
 
-void Init_GPIO( void )
-{     
-    //PIO_InitializeInterrupts( PIO_PRIORITY ); 
-    LED_Configure(USBD_LEDPOWER);
-    LED_Configure(USBD_LEDDATA);    
-    //LED_Set(USBD_LEDPOWER); 
-    //LED_Set(USBD_LEDDATA); 
-  
+
+void __ramfunc Merge_GPIO_Data( unsigned short *pdata )
+{
+    unsigned int   i, j, n;
+    unsigned char  temp;
+    unsigned short gpio_data[8];
+    
+    GPIOPort_Get_Fast( &temp );
+    
+    for( i = 0, n = 0 ; i < 8 ; i++ ) {
+     
+        if( global_rec_gpio_mask &(1<<i) ) {
+            if( temp & (1<<i) ) {
+                gpio_data[n++] = 0x3FFF;  //high level
+            } else {
+                gpio_data[n++] = 0;       //low level
+            }
+        }
+    }
+    
+    for( i = 0; i < global_rec_samples ; i++ ) { //2ms buffer
+        
+        for( j = 0; j < global_rec_gpio_num ; j ++ ) {            
+         *( pdata + global_rec_gpio_index + j ) = gpio_data[j];
+        }
+        
+        pdata += global_rec_num;
+    }
+            
 }
+
+
 
 /*
 *********************************************************************************************************
@@ -308,6 +335,12 @@ static unsigned char Init_Rec_Setting( void )
     SSC_Channel_Set_Rx( channels_rec, bit_length ); 
     
     First_Pack_Padding_BI();
+    
+    global_rec_samples    =  sample_rate / 1000 * 2;    
+    global_rec_num        =  Audio_Configure[0].channel_num ;
+    global_rec_gpio_mask  =  Audio_Configure[0].gpio_rec_bit_mask ;
+    global_rec_gpio_num   =  Audio_Configure[0].gpio_rec_num ;
+    global_rec_gpio_index =  Audio_Configure[0].gpio_rec_start_index ;
     
     return 0;
 }
@@ -548,7 +581,7 @@ void Audio_State_Control( void )
                 temp = Audio_Configure[1].sample_rate / 1000 *  Audio_Configure[1].channel_num * 2;
                 if( (temp << PLAY_BUF_DLY_N) > USB_OUT_BUFFER_SIZE ) { //play pre-buffer must not exceed whole play buffer
                     err = ERR_AUD_CFG;
-                }
+                }              
             break;
             
             case AUDIO_CMD_VERSION: 

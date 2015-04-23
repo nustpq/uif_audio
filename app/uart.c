@@ -81,7 +81,7 @@ static const Pin Uart1_Pins[] = {
       
 };
 
-unsigned char UART_CMD_Buffer[4];
+unsigned char UART_CMD_Buffer[8];
 unsigned char state_mac      = CMD_STAT_SYNC1 ;
 unsigned char PcCmdCounter   = 0; 
 
@@ -170,7 +170,7 @@ void pcInt(  unsigned char ch )
         case CMD_STAT_DATA :
             *(pChar+PcCmdCounter) = ch; 
             PcCmdCounter++;
-            if( PcCmdCounter > 4 ) { //check overflow
+            if( PcCmdCounter > 7 ) { //check overflow
                Audio_Configure[(*pChar)&0x01] = *(AUDIO_CFG *)pChar;                
                audio_cmd_index = AUDIO_CMD_CFG ; 
                PcCmdCounter = 0 ;        

@@ -55,10 +55,8 @@ int main( void )
     printf("    UsbEpSize = %d B, PlayPreBuffer = %d ms\r\n", USBDATAEPSIZE, 1<<PLAY_BUF_DLY_N);
     printf("--  Compiled on %s %s by PQ--\r\n", __DATE__, __TIME__);
     printf("--------------------------------------------------\r\n");
-    
-    LED_Configure(USBD_LEDPOWER);
-    LED_Configure(USBD_LEDDATA);
-    
+        
+    Init_GPIO();
     Timer0_Init(); 
     Timer1_Init();
     Timer2_Init();

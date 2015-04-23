@@ -1186,7 +1186,7 @@
         <option>
           <name>CCAllowList</name>
           <version>1</version>
-          <state>00000000</state>
+          <state>11111110</state>
         </option>
         <option>
           <name>CCDebugInfo</name>
@@ -1282,7 +1282,7 @@
         </option>
         <option>
           <name>CCOptLevel</name>
-          <state>0</state>
+          <state>3</state>
         </option>
         <option>
           <name>CCOptStrategy</name>
@@ -1291,7 +1291,7 @@
         </option>
         <option>
           <name>CCOptLevelSlave</name>
-          <state>0</state>
+          <state>3</state>
         </option>
         <option>
           <name>CompilerMisraRules98</name>
@@ -1562,7 +1562,7 @@
         </option>
         <option>
           <name>OOCOutputFile</name>
-          <state>UIF_Audio_V.bin</state>
+          <state>UIF2.0_Audio_V.bin</state>
         </option>
         <option>
           <name>OOCCommandLineProducer</name>
@@ -1925,6 +1925,12 @@
     </file>
     <file>
       <name>$PROJ_DIR$\..\..\app\app.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\..\app\gpio.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\..\app\gpio.h</name>
     </file>
     <file>
       <name>$PROJ_DIR$\..\..\app\i2s.c</name>

@@ -414,6 +414,16 @@
 #define BOARD_AT73C213_SSC_ID       AT91C_ID_SSC0
 #define BOARD_AT73C213_SSC_PINS     PINS_SSC_TX
 
+#define GPIO_0            {1 << 0, AT91C_BASE_PIOB, AT91C_ID_PIOB, PIO_INPUT, PIO_PULLUP}
+#define GPIO_1            {1 << 1, AT91C_BASE_PIOB, AT91C_ID_PIOB, PIO_INPUT, PIO_PULLUP} 
+#define GPIO_2            {1 << 2, AT91C_BASE_PIOB, AT91C_ID_PIOB, PIO_INPUT, PIO_PULLUP} 
+#define GPIO_3            {1 << 3, AT91C_BASE_PIOB, AT91C_ID_PIOB, PIO_INPUT, PIO_PULLUP} 
+#define GPIO_4            {1 << 4, AT91C_BASE_PIOB, AT91C_ID_PIOB, PIO_INPUT, PIO_PULLUP}         
+#define GPIO_5            {1 << 5, AT91C_BASE_PIOB, AT91C_ID_PIOB, PIO_INPUT, PIO_PULLUP}
+#define GPIO_6            {1 << 6, AT91C_BASE_PIOB, AT91C_ID_PIOB, PIO_INPUT, PIO_PULLUP}
+#define GPIO_7            {1 << 7, AT91C_BASE_PIOB, AT91C_ID_PIOB, PIO_INPUT, PIO_PULLUP}
+
+
 //------------------------------------------------------------------------------
 /// \page "SAM3UE-EK - External components"
 /// This page lists the definitions related to external on-board components
