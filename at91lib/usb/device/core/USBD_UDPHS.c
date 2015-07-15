@@ -433,7 +433,7 @@ unsigned char Check_Toggle_State( void )
 {
     
   unsigned char state  = 0;  
-  unsigned int  status = AT91C_BASE_UDPHS->UDPHS_EPT[CDCDSerialDriverDescriptors_DATAIN].UDPHS_EPTSTA;
+  unsigned int  status = AT91C_BASE_UDPHS->UDPHS_EPT[CDCDSerialDriverDescriptors_AUDIODATAIN].UDPHS_EPTSTA;
 
   if( status & AT91C_UDPHS_TOGGLESQ_STA_01 ) {
       state = 1;
@@ -923,10 +923,10 @@ void UDPD_IrqHandler(void)
 
                     // Check if endpoint has a pending interrupt
                     if ((status & (1 << SHIFT_DMA << numIT)) != 0) {                        
-//                        if( numIT == CDCDSerialDriverDescriptors_DATAOUT ) {
+//                        if( numIT == CDCDSerialDriverDescriptors_AUDIODATAOUT ) {
 //                            debug_usb_dma_OUT++;
 //                        }                        
-//                        if( numIT == CDCDSerialDriverDescriptors_DATAIN ) {
+//                        if( numIT == CDCDSerialDriverDescriptors_AUDIODATAIN ) {
 //                          debug_usb_dma_IN++;
 //                         printf(". ");
 //                      }
@@ -1138,7 +1138,7 @@ char USBD_Write( unsigned char    bEndpoint,
 
     // Return if the endpoint is not in IDLE state
     if (pEndpoint->state != UDP_ENDPOINT_IDLE)  {
-//        printf("V");
+        printf("<EP:%d><%d>",bEndpoint,pEndpoint->state); //PQ
         return USBD_STATUS_LOCKED;
     } else {
 //        printf("(");
@@ -1234,7 +1234,7 @@ char USBD_Read( unsigned char    bEndpoint,
   
     // Return if the endpoint is not in IDLE state
     if (pEndpoint->state != UDP_ENDPOINT_IDLE) {
-        printf("<EP:%d>",bEndpoint); //PQ
+        printf("<EP:%d><%d>",bEndpoint,pEndpoint->state); //PQ
         return USBD_STATUS_LOCKED;
     } else {
    // printf("r");
@@ -1885,3 +1885,24 @@ unsigned char USBD_GetState( void )
 
 #endif // BOARD_USB_UDPHS
 
+
+
+void End_Audio_Transfer( void )
+{
+    UDPHS_EndOfTransfer(CDCDSerialDriverDescriptors_AUDIODATAOUT, USBD_STATUS_ABORTED);
+    //UDPHS_EndOfTransfer(CDCDSerialDriverDescriptors_AUDIODATAIN, USBD_STATUS_ABORTED);
+}
+
+void Get_EP_State( unsigned char bEndpoint )
+{
+    char ep_state_str[][10] = {"DSIABLED", "HALTED", "IDLE", "SENDING","RECEIVING"};
+    Endpoint *pEndpoint = &(endpoints[bEndpoint]);
+    printf("\r\nEP[%d] state : %s ",bEndpoint, ep_state_str[pEndpoint->state] );
+}
+
+
+void Idle_EP_State( unsigned char bEndpoint )
+{
+    Endpoint *pEndpoint = &(endpoints[bEndpoint]);
+    pEndpoint->state = UDP_ENDPOINT_IDLE;   
+}

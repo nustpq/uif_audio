@@ -59,9 +59,9 @@
 /// - CDCDSerialDriverDescriptors_NOTIFICATION
 
 /// Audio Data OUT endpoint number.
-#define CDCDSerialDriverDescriptors_DATAOUT             1
+#define CDCDSerialDriverDescriptors_AUDIODATAOUT        1
 /// Audio Data IN endpoint number.
-#define CDCDSerialDriverDescriptors_DATAIN              2
+#define CDCDSerialDriverDescriptors_AUDIODATAIN         2
 
 /// Cmd Data OUT endpoint number.
 #define CDCDSerialDriverDescriptors_CMDDATAOUT          3

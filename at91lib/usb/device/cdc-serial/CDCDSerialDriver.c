@@ -232,7 +232,7 @@ unsigned char CDCDSerialDriver_Read(void *data,
                                     void *argument)
 {
 
-    return USBD_Read(CDCDSerialDriverDescriptors_DATAOUT,
+    return USBD_Read(CDCDSerialDriverDescriptors_AUDIODATAOUT,
                      data,
                      size,
                      callback,
@@ -269,7 +269,7 @@ unsigned char CDCDSerialDriver_Write(void *data,
 {
     
     
-    return USBD_Write(CDCDSerialDriverDescriptors_DATAIN,
+    return USBD_Write(CDCDSerialDriverDescriptors_AUDIODATAIN,
                       data,
                       size,
                       callback,

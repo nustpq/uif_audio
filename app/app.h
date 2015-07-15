@@ -20,7 +20,7 @@
 #define MCK                  BOARD_MCK
 #define I2S_IN_BUFFER_SIZE   1536   //audio data transfered per frame, Max 48kHz:   48k*4B*8Slot*1ms=1536
 #define I2S_OUT_BUFFER_SIZE  1536   
-#define USBDATAEPSIZE        BOARD_USB_ENDPOINTS_MAXPACKETSIZE( CDCDSerialDriverDescriptors_DATAIN ) //64//512
+#define USBDATAEPSIZE        BOARD_USB_ENDPOINTS_MAXPACKETSIZE( CDCDSerialDriverDescriptors_AUDIODATAIN ) //64//512
 #define USB_OUT_BUFFER_SIZE  16384//32768//16384  //2^14=16384  //USB audio data, size MUST be 2^n .
 #define USB_IN_BUFFER_SIZE   16384  //2^14=16384  //USB audio data, size MUST be 2^n .
 
