@@ -44,8 +44,9 @@
 #define TIMER_PRIORITY      6
 #define UART_PRIORITY       4
 #define USB_PRIORITY        2
-#define HDMA_PRIORITY       2 //SSC must have highest priority, but now
-
+#define HDMA_PRIORITY       2  //SSC must have highest priority, but now
+#define TWI_PRIORITY        3
+#define SPI_PRIORITY        3
 
 #define  AUDIO_CMD_IDLE                 0x00
 #define  AUDIO_CMD_START_REC            0x01
@@ -67,7 +68,7 @@
 #define  ERR_CMD_TYPE                   252u
 #define  ERR_TDM_FORMAT                 253u
 
-//ERROR CODE from 0 ~ 244 reserved for Audio MCU
+//ERROR CODE from 0 ~ 244 reserved for Host MCU
 
 
 

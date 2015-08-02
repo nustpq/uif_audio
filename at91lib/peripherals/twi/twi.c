@@ -88,8 +88,8 @@ void TWI_ConfigureMaster(AT91S_TWI *pTwi, unsigned int twck, unsigned int mck)
     unsigned int cldiv;
     unsigned char ok = 0;
 
-    TRACE_DEBUG("TWI_ConfigureMaster()\n\r");
-    SANITY_CHECK(pTwi);
+    //TRACE_DEBUG("TWI_ConfigureMaster()\n\r");
+    //SANITY_CHECK(pTwi);
 
 #ifdef AT91C_TWI_SVEN  // TWI slave
     // SVEN: TWI Slave Mode Enabled
@@ -121,8 +121,8 @@ void TWI_ConfigureMaster(AT91S_TWI *pTwi, unsigned int twck, unsigned int mck)
         }
     }
 
-    ASSERT(ckdiv < 8, "-F- Cannot find valid TWI clock parameters\n\r");
-    TRACE_DEBUG("Using CKDIV = %u and CLDIV/CHDIV = %u\n\r", ckdiv, cldiv);
+    //ASSERT(ckdiv < 8, "-F- Cannot find valid TWI clock parameters\n\r");
+    //TRACE_DEBUG("Using CKDIV = %u and CLDIV/CHDIV = %u\n\r", ckdiv, cldiv);
     pTwi->TWI_CWGR = 0;
     pTwi->TWI_CWGR = (ckdiv << 16) | (cldiv << 8) | cldiv;
 }
@@ -157,7 +157,7 @@ void TWI_ConfigureSlave(AT91S_TWI *pTwi, unsigned char slaveAddress)
 
     // Wait at least 10 ms
     for (i=0; i < 1000000; i++);
-    ASSERT( (pTwi->TWI_CR & AT91C_TWI_SVDIS)!=AT91C_TWI_SVDIS, "Problem slave mode");
+    //ASSERT( (pTwi->TWI_CR & AT91C_TWI_SVDIS)!=AT91C_TWI_SVDIS, "Problem slave mode");
 }
 #endif
 
@@ -167,7 +167,7 @@ void TWI_ConfigureSlave(AT91S_TWI *pTwi, unsigned char slaveAddress)
 //------------------------------------------------------------------------------
 void TWI_Stop(AT91S_TWI *pTwi)
 {
-    SANITY_CHECK(pTwi);
+    //SANITY_CHECK(pTwi);
 
     pTwi->TWI_CR = AT91C_TWI_STOP;
 }
@@ -188,10 +188,10 @@ void TWI_StartRead(
     unsigned char isize)
 {
     //TRACE_DEBUG("TWI_StartRead()\n\r");
-    SANITY_CHECK(pTwi);
-    SANITY_CHECK((address & 0x80) == 0);
-    SANITY_CHECK((iaddress & 0xFF000000) == 0);
-    SANITY_CHECK(isize < 4);
+    //SANITY_CHECK(pTwi);
+    //SANITY_CHECK((address & 0x80) == 0);
+    //SANITY_CHECK((iaddress & 0xFF000000) == 0);
+    //SANITY_CHECK(isize < 4);
 
     // Set slave address and number of internal address bytes
     pTwi->TWI_MMR = 0;
@@ -214,7 +214,7 @@ void TWI_StartRead(
 //-----------------------------------------------------------------------------
 unsigned char TWI_ReadByte(AT91S_TWI *pTwi)
 {
-    SANITY_CHECK(pTwi);
+    //SANITY_CHECK(pTwi);
 
     return pTwi->TWI_RHR;
 }
@@ -229,7 +229,7 @@ unsigned char TWI_ReadByte(AT91S_TWI *pTwi)
 //-----------------------------------------------------------------------------
 void TWI_WriteByte(AT91S_TWI *pTwi, unsigned char byte)
 {
-    SANITY_CHECK(pTwi);
+    //SANITY_CHECK(pTwi);
 
     pTwi->TWI_THR = byte;
 }
@@ -252,10 +252,10 @@ void TWI_StartWrite(
     unsigned char byte)
 {
     //TRACE_DEBUG("TWI_StartWrite()\n\r");
-    SANITY_CHECK(pTwi);
-    SANITY_CHECK((address & 0x80) == 0);
-    SANITY_CHECK((iaddress & 0xFF000000) == 0);
-    SANITY_CHECK(isize < 4);
+    //SANITY_CHECK(pTwi);
+    //SANITY_CHECK((address & 0x80) == 0);
+    //SANITY_CHECK((iaddress & 0xFF000000) == 0);
+    //SANITY_CHECK(isize < 4);
 
     // Set slave address and number of internal address bytes
     pTwi->TWI_MMR = 0;
@@ -308,8 +308,8 @@ unsigned char TWI_TransferComplete(AT91S_TWI *pTwi)
 //-----------------------------------------------------------------------------
 void TWI_EnableIt(AT91S_TWI *pTwi, unsigned int sources)
 {
-    SANITY_CHECK(pTwi);
-    SANITY_CHECK((sources & 0xFFFFF088) == 0);
+    //SANITY_CHECK(pTwi);
+    //SANITY_CHECK((sources & 0xFFFFF088) == 0);
 
     pTwi->TWI_IER = sources;
 }
@@ -321,8 +321,8 @@ void TWI_EnableIt(AT91S_TWI *pTwi, unsigned int sources)
 //-----------------------------------------------------------------------------
 void TWI_DisableIt(AT91S_TWI *pTwi, unsigned int sources)
 {
-    SANITY_CHECK(pTwi);
-    SANITY_CHECK((sources & 0xFFFFF088) == 0);
+    //SANITY_CHECK(pTwi);
+    //SANITY_CHECK((sources & 0xFFFFF088) == 0);
 
     pTwi->TWI_IDR = sources;
 }
@@ -335,7 +335,7 @@ void TWI_DisableIt(AT91S_TWI *pTwi, unsigned int sources)
 //-----------------------------------------------------------------------------
 unsigned int TWI_GetStatus(AT91S_TWI *pTwi)
 {
-    SANITY_CHECK(pTwi);
+    //SANITY_CHECK(pTwi);
 
     return pTwi->TWI_SR;
 }
@@ -351,7 +351,7 @@ unsigned int TWI_GetMaskedStatus(AT91S_TWI *pTwi)
 {
     unsigned int status;
 
-    SANITY_CHECK(pTwi);
+    //SANITY_CHECK(pTwi);
 
     status = pTwi->TWI_SR;
     status &= pTwi->TWI_IMR;
@@ -365,7 +365,7 @@ unsigned int TWI_GetMaskedStatus(AT91S_TWI *pTwi)
 //-----------------------------------------------------------------------------
 void TWI_SendSTOPCondition(AT91S_TWI *pTwi)
 {
-    SANITY_CHECK(pTwi);
+    //SANITY_CHECK(pTwi);
 
     pTwi->TWI_CR |= AT91C_TWI_STOP;
 }

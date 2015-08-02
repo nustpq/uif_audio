@@ -50,10 +50,10 @@
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
-char fw_version[] = "[FW:A:V2.3]";
+char fw_version[] = "[FW:A:V2.4]";
 ////////////////////////////////////////////////////////////////////////////////
 
-//Buffer Level 1:  USB data stream buffer : 512 B
+//Buffer Level 1:  USB data stream buffer : 512 B //change to 64B for fast update
 unsigned char usbBufferBulkOut[USBDATAEPSIZE];
 unsigned char usbBufferBulkIn[USBDATAEPSIZE]; 
 
@@ -76,7 +76,7 @@ kfifo_t bulkout_fifo;
 kfifo_t bulkin_fifo;
 
 //////////////////////////////////////////
-//Buffer Level 1:  USB Cmd data stream buffer : 512 B
+//Buffer Level 1:  USB Cmd data stream buffer : 64 B
 unsigned char usbCmdBufferBulkOut[USBCMDDATAEPSIZE];
 unsigned char usbCmdBufferBulkIn[USBCMDDATAEPSIZE]; 
 

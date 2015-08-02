@@ -364,7 +364,8 @@
 #define PIN_SPI0_SPCK  {1 << 15, AT91C_BASE_PIOA, AT91C_ID_PIOA, PIO_PERIPH_A, PIO_DEFAULT}
 /// SPI0 chip select 2 pin definition.
 //#define PIN_SPI0_NPCS2_PC14  {1 <<  14, AT91C_BASE_PIOC, AT91C_ID_PIOC, PIO_PERIPH_B, PIO_DEFAULT}
-#define PIN_SPI0_NPCS2_PC14  {1 <<  14, AT91C_BASE_PIOC, AT91C_ID_PIOC, PIO_OUTPUT_0, PIO_PULLUP}
+#define PIN_SPI0_NPCS0 {1 << 16, AT91C_BASE_PIOA, AT91C_ID_PIOA, PIO_PERIPH_A, PIO_DEFAULT}
+
 /// List of SPI0 pin definitions (MISO, MOSI & SPCK).
 #define PINS_SPI0      PIN_SPI0_MISO, PIN_SPI0_MOSI, PIN_SPI0_SPCK
 
@@ -605,9 +606,11 @@
 #define BOARD_DBGU_ID               AT91C_ID_DBGU
 
 /// Dma channel number
-#define BOARD_MCI_DMA_CHANNEL                         0
-#define BOARD_SSC_IN_DMA_CHANNEL                      1
-#define BOARD_SSC_OUT_DMA_CHANNEL                     2
+//#define BOARD_MCI_DMA_CHANNEL                         0
+#define BOARD_SPI_IN_DMA_CHANNEL                      0
+#define BOARD_SPI_OUT_DMA_CHANNEL                     1 
+#define BOARD_SSC_IN_DMA_CHANNEL                      2
+#define BOARD_SSC_OUT_DMA_CHANNEL                     3
 /// MCI0 DMA hardware handshaking ID
 #define DMA_HW_SRC_REQ_ID_MCI0      AT91C_HDMA_SRC_PER_0
 #define DMA_HW_DEST_REQ_ID_MCI0     AT91C_HDMA_DST_PER_0
@@ -626,6 +629,10 @@
 #define BOARD_SSC_IN_DMA_HW_SRC_REQ_ID       AT91C_HDMA_SRC_PER_4
 #define BOARD_SSC_IN_DMA_HW_DEST_REQ_ID      AT91C_HDMA_DST_PER_4
    
+#define SPI_IN_DMA_HW_SRC_REQ_ID        AT91C_HDMA_SRC_PER_1
+#define SPI_IN_DMA_HW_DEST_REQ_ID       AT91C_HDMA_DST_PER_1 
+#define SPI_OUT_DMA_HW_SRC_REQ_ID       AT91C_HDMA_SRC_PER_2
+#define SPI_OUT_DMA_HW_DEST_REQ_ID      AT91C_HDMA_DST_PER_2
    
 /// Rtc
 #define BOARD_RTC_ID                AT91C_ID_RTC
@@ -730,6 +737,9 @@ typedef enum IRQn
 #define BOARD_NF_DATA_ADDR      0x61000000
 
 #endif
+
+                                    
+#define NULL 0
 
 #endif //#ifndef BOARD_H
 

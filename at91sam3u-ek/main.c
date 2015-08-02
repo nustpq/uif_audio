@@ -71,7 +71,8 @@ int main( void )
     USB_Init();  
     UART1_Init();
     I2S_Init();
- 
+    SPI_Init();
+    
     while(1) {
       
         //Debug_Info(); 

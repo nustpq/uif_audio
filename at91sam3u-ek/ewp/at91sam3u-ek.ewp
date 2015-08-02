@@ -2003,6 +2003,15 @@
           <name>$PROJ_DIR$\..\..\at91lib\drivers\dmad\dmad.c</name>
         </file>
       </group>
+      <group>
+        <name>twi</name>
+        <file>
+          <name>$PROJ_DIR$\..\..\at91lib\drivers\twi\twid.c</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\..\at91lib\drivers\twi\twid.h</name>
+        </file>
+      </group>
     </group>
     <group>
       <name>peripherals</name>
@@ -2055,6 +2064,15 @@
         </file>
       </group>
       <group>
+        <name>spi</name>
+        <file>
+          <name>$PROJ_DIR$\..\..\at91lib\peripherals\spi\spi.c</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\..\at91lib\peripherals\spi\spi.h</name>
+        </file>
+      </group>
+      <group>
         <name>ssc</name>
         <file>
           <name>$PROJ_DIR$\..\..\at91lib\peripherals\ssc\ssc.c</name>
@@ -2067,6 +2085,15 @@
         </file>
         <file>
           <name>$PROJ_DIR$\..\..\at91lib\peripherals\tc\tc.h</name>
+        </file>
+      </group>
+      <group>
+        <name>twi</name>
+        <file>
+          <name>$PROJ_DIR$\..\..\at91lib\peripherals\twi\twi.c</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\..\at91lib\peripherals\twi\twi.h</name>
         </file>
       </group>
       <group>

@@ -86,6 +86,9 @@
     #define AT91C_TWI_TXCOMP  AT91C_TWI_TXCOMP_MASTER
 #endif
 
+#ifndef AT91C_TWI_NACK
+    #define AT91C_TWI_NACK  AT91C_TWI_NACK_MASTER
+#endif
 //------------------------------------------------------------------------------
 //         Global macros
 //------------------------------------------------------------------------------
@@ -101,6 +104,7 @@
 /// Returns 1 if the TXCOMP bit (transfer complete) is set in the given
 /// status register value.
 #define TWI_STATUS_TXCOMP(status) ((status & AT91C_TWI_TXCOMP) == AT91C_TWI_TXCOMP)
+#define TWI_STATUS_NACK(status)   ((status & AT91C_TWI_NACK)   == AT91C_TWI_NACK)
 
 //------------------------------------------------------------------------------
 //         Global functions

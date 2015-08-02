@@ -27,17 +27,47 @@
  * ----------------------------------------------------------------------------
  */
 
-
-#define TWITIMEOUTMAX 50000
-
 //------------------------------------------------------------------------------
 //         Headers
 //------------------------------------------------------------------------------
+#include <board.h>
+#include "pio/pio.h"
+#include "twi/twi.h" 
+#include "twi/twid.h" 
+#include <irq/irq.h>
+#include <tc/tc.h>
+#include <stdbool.h>
+#include <string.h>
+#include "kfifo.h"
+#include "app.h"
 
-#include "twid.h"
-#include <twi/twi.h>
-#include <utility/assert.h>
-#include <utility/trace.h>
+/// TWI peripheral redefinition if needed
+//#if !defined(AT91C_BASE_TWI) && defined(AT91C_BASE_TWI0)
+//    #define AT91C_BASE_TWI      AT91C_BASE_TWI0
+ //   #define AT91C_ID_TWI        AT91C_ID_TWI0
+ //   #define PINS_TWI            PINS_TWI0
+//#endif
+
+//use TWI0 as I2C host
+#define AT91C_BASE_TWI      AT91C_BASE_TWI0
+#define AT91C_ID_TWI        AT91C_ID_TWI0
+#define PINS_TWI            PINS_TWI0
+   
+   
+#define TWITIMEOUTMAX         96000  // 1ms timeout @ 96MHz MIP
+#define TWITIMEOUTMAX_BURST   96000000  // 1s timeout @ 96MHz MIP
+     
+//#define TWI_V3XX   // send stop, A3 no need to do this //defined in board.h
+#define TWI_ASYNC_MODE // Asynchronous transfer enabled
+
+
+/// Pio pins to configure.
+static const Pin twi_pins[] = {PINS_TWI};
+
+/// TWI driver instance.
+Twid  twid;
+
+Async twi_async ;     
 
 //------------------------------------------------------------------------------
 //         Local types
@@ -60,9 +90,14 @@ typedef struct _AsyncTwi {
     /// Total number of bytes to transfer.
     unsigned int num;
     /// Number of already transferred bytes.
-    unsigned int transferred;
+    unsigned int transferred;    
+   
 
 } AsyncTwi;
+
+
+//OS_EVENT *TWI_Sem_lock; //sem for TWI
+//OS_EVENT *TWI_Sem_done; //sem for TWI
 
 //------------------------------------------------------------------------------
 //         Global functions
@@ -76,86 +111,105 @@ typedef struct _AsyncTwi {
 //------------------------------------------------------------------------------
 void TWID_Initialize(Twid *pTwid, AT91S_TWI *pTwi)
 {
-    TRACE_DEBUG("TWID_Initialize()\n\r");
-    SANITY_CHECK(pTwid);
-    SANITY_CHECK(pTwi);
-
+    //TRACE_DEBUG("TWID_Initialize()\n\r");
+    //SANITY_CHECK(pTwid);
+    //SANITY_CHECK(pTwi); 
+  
     // Initialize driver
-    pTwid->pTwi = pTwi;
-    pTwid->pTransfer = 0;
-}
+    pTwid->pTwi         = pTwi;
+    pTwid->pTransfer    = NULL;
+   }
+
+
 
 //------------------------------------------------------------------------------
 /// Interrupt handler for a TWI peripheral. Manages asynchronous transfer
 /// occuring on the bus. This function MUST be called by the interrupt service
 /// routine of the TWI peripheral if asynchronous read/write are needed.
-/// \param pTwid  Pointer to a Twid instance.
 //------------------------------------------------------------------------------
-void TWID_Handler(Twid *pTwid)
+unsigned char twi_rw_done = 0;
+
+void TWID_Handler( void )
 {
-    unsigned char status;
-    AsyncTwi *pTransfer = (AsyncTwi *) pTwid->pTransfer;
-    AT91S_TWI *pTwi = pTwid->pTwi;
-
-    SANITY_CHECK(pTwid);
-
-    // Retrieve interrupt status
-    status = TWI_GetMaskedStatus(pTwi);
-
+    unsigned int status;
+    AsyncTwi  *pTransfer;
+    AT91S_TWI *pTwi     ;
+    
+    pTransfer   = (AsyncTwi *) twid.pTransfer;
+    pTwi        =              twid.pTwi; 
+    status      = TWI_GetMaskedStatus(pTwi);   // Retrieve interrupt status
+  
+    
+        //if NAK detected, end operations
+    if( TWI_STATUS_NACK(status) ) { 
+      
+        //BSP_IntClr(AT91C_ID_TWI ); 
+        TWI_DisableIt(pTwi, AT91C_TWI_TXRDY | AT91C_TWI_RXRDY | AT91C_TWI_TXCOMP | AT91C_TWI_NACK );    
+        pTransfer->status = 1; //NAK error
+        if (pTransfer->callback) {            
+           pTransfer->callback((Async *) pTransfer);
+            
+        }               
+        //OSSemPost( TWI_Sem_done );
+        twi_rw_done = 1;
+    }
     // Byte received
-    if (TWI_STATUS_RXRDY(status)) {
+    else if ( TWI_STATUS_RXRDY(status) ) {
 
         pTransfer->pData[pTransfer->transferred] = TWI_ReadByte(pTwi);
         pTransfer->transferred++;
 
         // Transfer finished ?
         if (pTransfer->transferred == pTransfer->num) {
-
             TWI_DisableIt(pTwi, AT91C_TWI_RXRDY);
             TWI_EnableIt(pTwi, AT91C_TWI_TXCOMP);
+            
         }
         // Last byte ?
-        else if (pTransfer->transferred == (pTransfer->num - 1)) {
-
-            TWI_Stop(pTwi);
+        else if ( pTransfer->transferred == (pTransfer->num - 1) ) {
+            TWI_Stop(pTwi);   
+            
         }
-    }
-    // Byte sent
-    else if (TWI_STATUS_TXRDY(status)) {
-
-        // Transfer finished ?
+    // Byte sent       
+    } else if (TWI_STATUS_TXRDY(status)) { 
+         // Transfer finished ?
         if (pTransfer->transferred == pTransfer->num) {
-
+#ifdef TWI_V3XX
+        // Send a STOP condition
+        TWI_Stop(pTwi); 
+#endif
             TWI_DisableIt(pTwi, AT91C_TWI_TXRDY);
             TWI_EnableIt(pTwi, AT91C_TWI_TXCOMP);
-            TWI_SendSTOPCondition(pTwi);
-        }
-        // Bytes remaining
-        else {
-
-            TWI_WriteByte(pTwi, pTransfer->pData[pTransfer->transferred]);
-            pTransfer->transferred++;
-        }
-    }
-    // Transfer complete
-    else if (TWI_STATUS_TXCOMP(status)) {
-
-        TWI_DisableIt(pTwi, AT91C_TWI_TXCOMP);
-        pTransfer->status = 0;
-        if (pTransfer->callback) {
             
+        } else  {// Bytes remaining
+            TWI_WriteByte(pTwi, pTransfer->pData[pTransfer->transferred]);
+            pTransfer->transferred++;     
+            
+        }        
+    // Transfer complete   
+    } else if (TWI_STATUS_TXCOMP(status)) { 
+
+        //BSP_IntClr(AT91C_ID_TWI ); 
+        TWI_DisableIt(pTwi, AT91C_TWI_TXCOMP | AT91C_TWI_NACK );
+        pTransfer->status = 0; //ok
+        if (pTransfer->callback) {            
             pTransfer->callback((Async *) pTransfer);
-        }
-        pTwid->pTransfer = 0;
-    }
+            
+        }              
+        //OSSemPost( TWI_Sem_done );
+        twi_rw_done = 1;
+    }    
+    
+
+        
 }
+
 
 //-----------------------------------------------------------------------------
 /// Asynchronously reads data from a slave on the TWI bus. An optional
 /// callback function is triggered when the transfer is complete.
 /// Returns 0 if the transfer has been started; otherwise returns a TWI error
 /// code.
-/// \param pTwid  Pointer to a Twid instance.
 /// \param address  TWI slave address.
 /// \param iaddress  Optional slave internal address.
 /// \param isize  Internal address size in bytes.
@@ -163,93 +217,112 @@ void TWID_Handler(Twid *pTwid)
 /// \param num  Number of bytes to read.
 /// \param pAsync  Asynchronous transfer descriptor.
 //-----------------------------------------------------------------------------
-unsigned char TWID_Read(
-    Twid *pTwid,
-    unsigned char address,
-    unsigned int iaddress,
-    unsigned char isize,
-    unsigned char *pData,
-    unsigned int num,
-    Async *pAsync)
-{
-    AT91S_TWI *pTwi = pTwid->pTwi;
-    AsyncTwi *pTransfer = (AsyncTwi *) pTwid->pTransfer;
+unsigned char TWID_Read      (
+        unsigned char  address,
+        unsigned int   iaddress,
+        unsigned char  isize,
+        unsigned char *pData,
+        unsigned int   num,
+        Async *pAsync         )
+{  
+  
+    AT91S_TWI *pTwi ;
+    AsyncTwi *pTransfer;
     unsigned int timeout;
-
-    //TRACE_DEBUG("TWID_Read()\n\r");
-    SANITY_CHECK(pTwid);
-    SANITY_CHECK((address & 0x80) == 0);
-    SANITY_CHECK((iaddress & 0xFF000000) == 0);
-    SANITY_CHECK(isize < 4);
-
-    // Check that no transfer is already pending
-    if (pTransfer) {
-
-        TRACE_ERROR("TWID_Read: A transfer is already pending\n\r");
-        return TWID_ERROR_BUSY;
-    }
-
-    // Set STOP signal if only one byte is sent
-    if (num == 1) {
-
-        TWI_Stop(pTwi);
-    }
-
-    // Asynchronous transfer
-    if (pAsync) {
-    
-        // Update the transfer descriptor
-        pTwid->pTransfer = pAsync;
-        pTransfer = (AsyncTwi *) pAsync;
-        pTransfer->status = ASYNC_STATUS_PENDING;
-        pTransfer->pData = pData;
-        pTransfer->num = num;
-        pTransfer->transferred = 0;
+    //unsigned char err;    
+    unsigned char state; 
         
-        // Enable read interrupt and start the transfer
-        TWI_EnableIt(pTwi, AT91C_TWI_RXRDY);
+    //pAsync    = &twi_async; //force use async
+    pTwi      = twid.pTwi; 
+    pTransfer = (AsyncTwi *)twid.pTransfer; 
+    state     = TWID_NO_ERROR;
+    
+    if( num == 0 ) {
+        return state;
+    } 
+    
+    if (pAsync) {  // Asynchronous transfer
+        //OSSemPend( TWI_Sem_lock, 0, &err );  
+        if (pTransfer) { // Check that no transfer is already pending
+            //TRACE_ERROR("TWID_Read: A transfer is already pending\n\r");   
+            state =  TWID_ERROR_BUSY;
+            return state ;
+        }
+        if (num == 1) { // in case of there is only one byte data
+            TWI_Stop(pTwi);  //stop must be send before the last byte
+            
+        }    
+        // Update the transfer descriptor
+        twid.pTransfer          = pAsync;
+        pTransfer               = (AsyncTwi *)pAsync; 
+        pTransfer->status       = ASYNC_STATUS_PENDING;
+        pTransfer->pData        = pData;
+        pTransfer->num          = num;
+        pTransfer->transferred  = 0;   
+        twi_rw_done = 0;
+        // Enable read interrupt and start the transfer      
+        //BSP_IntEn(AT91C_ID_TWI);
         TWI_StartRead(pTwi, address, iaddress, isize);
-    }
-    // Synchronous transfer
-    else {
+        TWI_EnableIt(pTwi, AT91C_TWI_RXRDY);
+        TWI_EnableIt(pTwi, AT91C_TWI_NACK); 
+        
+        //OSSemPend( TWI_Sem_done, 1000, &err ); 
+        timeout = 0;
+        while( (twi_rw_done==0) && ( ++timeout < TWITIMEOUTMAX_BURST));
+        //if( OS_ERR_NONE != err ) {
+            TWI_DisableIt(pTwi, AT91C_TWI_TXRDY | AT91C_TWI_RXRDY | AT91C_TWI_TXCOMP | AT91C_TWI_NACK ); 
+        //}
+        state          = pTransfer->status ;
+        if (timeout == TWITIMEOUTMAX) {
+            //TRACE_ERROR("TWID Timeout TC\n\r");           
+            state =  TWID_ERROR_TIMEOUT;           
+        }      
+        twid.pTransfer = NULL;
+        //OSSemPost( TWI_Sem_lock );
+    }  else {  // Synchronous transfer
 
+        //OSSemPend( TWI_Sem_lock, 0, &err );  
+        // Set STOP signal if only one byte is sent
+        if (num == 1) {
+            TWI_Stop(pTwi);
+        }
         // Start read
         TWI_StartRead(pTwi, address, iaddress, isize);
-
         // Read all bytes, setting STOP before the last byte
-        while (num > 0) {
-
+        while (num > 0 ) {
             // Last byte
             if (num == 1) {
-
                 TWI_Stop(pTwi);
             }
-
             // Wait for byte then read and store it
             timeout = 0;
             while( !TWI_ByteReceived(pTwi) && (++timeout<TWITIMEOUTMAX) );
             if (timeout == TWITIMEOUTMAX) {
-                TRACE_ERROR("TWID Timeout BR\n\r");
+                //TRACE_ERROR("TWID Timeout BR\n\r");
+                 //OSSemPost( TWI_Sem_lock );
+                 state =  TWID_ERROR_TIMEOUT;
+                 return state;
             }
             *pData++ = TWI_ReadByte(pTwi);
             num--;
         }
-
         // Wait for transfer to be complete
         timeout = 0;
-        while( !TWI_TransferComplete(pTwi) && (++timeout<TWITIMEOUTMAX) );
+        while( !TWI_TransferComplete(pTwi) && (++timeout < TWITIMEOUTMAX) );
         if (timeout == TWITIMEOUTMAX) {
-            TRACE_ERROR("TWID Timeout TC\n\r");
+            //TRACE_ERROR("TWID Timeout TC\n\r");           
+            state =  TWID_ERROR_TIMEOUT2;           
         }
+        //OSSemPost( TWI_Sem_lock );
+        
     }
-
-    return 0;
+       
+    return state;
 }
 
 //------------------------------------------------------------------------------
 /// Asynchronously sends data to a slave on the TWI bus. An optional callback
 /// function is invoked whenever the transfer is complete.
-/// \param pTwid  Pointer to a Twid instance.
 /// \param address  Slave address.
 /// \param iaddress  Optional slave internal address.
 /// \param isize  Number of internal address bytes.
@@ -257,65 +330,81 @@ unsigned char TWID_Read(
 /// \param num  Number of bytes to send.
 /// \param pAsync  Pointer to an Asynchronous transfer descriptor.
 //------------------------------------------------------------------------------
-unsigned char TWID_Write(
-    Twid *pTwid,
-    unsigned char address,
-    unsigned int iaddress,
-    unsigned char isize,
-    unsigned char *pData,
-    unsigned int num,
-    Async *pAsync)
+unsigned char TWID_Write    (
+        unsigned char  address,
+        unsigned int   iaddress,
+        unsigned char  isize,
+        unsigned char *pData,
+        unsigned int   num,
+        Async *pAsync       )
 {
-    AT91S_TWI *pTwi = pTwid->pTwi;
-    AsyncTwi *pTransfer = (AsyncTwi *) pTwid->pTransfer;
+    AT91S_TWI *pTwi;
+    AsyncTwi *pTransfer;
     unsigned int timeout;
-
-    //TRACE_DEBUG("TWID_Write()\n\r");
-    //TRACE_DEBUG("0x%X\n\r", pData[0]);
-    SANITY_CHECK(pTwi);
-    SANITY_CHECK((address & 0x80) == 0);
-    SANITY_CHECK((iaddress & 0xFF000000) == 0);
-    SANITY_CHECK(isize < 4);
-
-    // Check that no transfer is already pending
-    if (pTransfer) {
-
-        TRACE_ERROR("TWI_Write: A transfer is already pending\n\r");
-        return TWID_ERROR_BUSY;
-    }
-
-    // Asynchronous transfer
-    if (pAsync) {
+    //unsigned char err;     
+    unsigned char state; 
+        
+    //pAsync    = &twi_async; //force use async    
+    pTwi      = twid.pTwi; 
+    pTransfer = (AsyncTwi *)twid.pTransfer;      
+    state     = TWID_NO_ERROR;
     
+    if( num == 0 ) {
+        return state;
+    }
+    
+    if (pAsync) {  // Asynchronous transfer
+        //OSSemPend( TWI_Sem_lock, 0, &err );
+        if (pTransfer) { // Check that no transfer is already pending
+            //TRACE_ERROR("TWID_Read: A transfer is already pending\n\r");   
+            state =  TWID_ERROR_BUSY;
+            return state ;
+        }         
+             
         // Update the transfer descriptor
-        pTwid->pTransfer = pAsync;
-        pTransfer = (AsyncTwi *) pAsync;
-        pTransfer->status = ASYNC_STATUS_PENDING;
-        pTransfer->pData = pData;
-        pTransfer->num = num;
-        pTransfer->transferred = 1;
-    
+        twid.pTransfer          = pAsync;
+        pTransfer               = (AsyncTwi *)pAsync;    
+        pTransfer->status       = ASYNC_STATUS_PENDING;
+        pTransfer->pData        = pData;
+        pTransfer->num          = num;
+        pTransfer->transferred  = 1;    
+        twi_rw_done = 0;
         // Enable write interrupt and start the transfer
-        TWI_StartWrite(pTwi, address, iaddress, isize, *pData);
-        TWI_EnableIt(pTwi, AT91C_TWI_TXRDY);
-    }
-    // Synchronous transfer
-    else {
+     
+        //BSP_IntEn(AT91C_ID_TWI);
+        TWI_StartWrite(pTwi, address, iaddress, isize, *pData); 
+        TWI_EnableIt(pTwi, AT91C_TWI_TXRDY);         
+        TWI_EnableIt(pTwi, AT91C_TWI_NACK);  
+        //OSSemPend( TWI_Sem_done, 1000, &err );
+        timeout = 0;
+        while(  (twi_rw_done==0) && ( ++timeout<TWITIMEOUTMAX_BURST));
+        //if( OS_ERR_NONE != err ) {
+            TWI_DisableIt(pTwi, AT91C_TWI_TXRDY | AT91C_TWI_RXRDY | AT91C_TWI_TXCOMP | AT91C_TWI_NACK ); 
+        //}
+        state          =  pTransfer->status ;
+        //APP_TRACE_INFO(("\r\nUIF_TYPE_SPI 1388 error: %d\r\n",timeout));
+        if (timeout == TWITIMEOUTMAX) {
+            //TRACE_ERROR("TWID Timeout TC\n\r");           
+            state =  TWID_ERROR_TIMEOUT;           
+        }
+        twid.pTransfer =  NULL;
+        //OSSemPost( TWI_Sem_lock );
+    } else {   // Synchronous transfer   
 
+        //OSSemPend( TWI_Sem_lock, 0, &err ); 
         // Start write
         TWI_StartWrite(pTwi, address, iaddress, isize, *pData++);
         num--;
-
         // Send all bytes
-        while (num > 0) {
-        
+        while (num > 0) {        
             // Wait before sending the next byte
             timeout = 0;
             while( !TWI_ByteSent(pTwi) && (++timeout<TWITIMEOUTMAX) );
             if (timeout == TWITIMEOUTMAX) {
-                TRACE_ERROR("TWID Timeout BS\n\r");
+                //TRACE_ERROR("TWID Timeout BS\n\r");             
+                 state =  TWID_ERROR_TIMEOUT;
+                 return state;
             }
-
             TWI_WriteByte(pTwi, *pData++);
             num--;
         }
@@ -323,18 +412,73 @@ unsigned char TWID_Write(
         // Wait for actual end of transfer
         timeout = 0;
 
+        //TWI auto insert a stop in A3 chip
 #ifdef TWI_V3XX
         // Send a STOP condition
         TWI_SendSTOPCondition(pTwi);
 #endif
-
+        
         while( !TWI_TransferComplete(pTwi) && (++timeout<TWITIMEOUTMAX) );
         if (timeout == TWITIMEOUTMAX) {
-            TRACE_ERROR("TWID Timeout TC2\n\r");
+            //TRACE_ERROR("TWID Timeout TC2\n\r");   
+            state =  TWID_ERROR_TIMEOUT2;         
         }
-
-    }
+        //OSSemPost( TWI_Sem_lock );
+    }     
     
-    return 0;
+    return state;
 }
+
+
+
+//TWI Initial
+// Configure TWI
+// In IRQ mode: to avoid problems, the priority of the TWI IRQ must be max.
+// In polling mode: try to disable all IRQs if possible.
+// (in this example it does not matter, there is only the TWI IRQ active)
+void TWI_Init( unsigned int twi_clock  )
+{
+  
+//#if (OS_EVENT_NAME_EN  > 0 )
+//    CPU_INT08U  err;
+//#endif
+    
+    PIO_Configure(  twi_pins, PIO_LISTSIZE(twi_pins)  );
+    
+    AT91C_BASE_PMC->PMC_PCER = 1 << AT91C_ID_TWI;
+    TWI_ConfigureMaster( AT91C_BASE_TWI, twi_clock, BOARD_MCK  );
+    TWID_Initialize( &twid, AT91C_BASE_TWI );
+    
+    //TWI_Sem_lock  = OSSemCreate(1); 
+    
+//#if (OS_EVENT_NAME_EN > 0)
+//   OSEventNameSet(TWI_Sem_lock,         "TWI_Sem_lock", &err);
+//#endif
+   
+
+   
+#ifdef TWI_ASYNC_MODE
+        
+    //TWI_Sem_done  = OSSemCreate(0); 
+    
+//#if (OS_EVENT_NAME_EN > 0)
+//   OSEventNameSet(TWI_Sem_done,         "TWI_Sem_done", &err);
+//#endif
+   
+    twi_async.callback  = 0 ;
+       
+    IRQ_ConfigureIT(AT91C_ID_TWI, TWI_PRIORITY, TWID_Handler);
+    IRQ_EnableIT(AT91C_ID_TWI);
+                                   
+//    BSP_IntClr(AT91C_ID_TWI );     
+//    BSP_IntEn(AT91C_ID_TWI); 
+    
+#endif
+    
+      
+}
+
+
+
+
 
