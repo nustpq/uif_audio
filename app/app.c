@@ -59,7 +59,7 @@ unsigned char usbBufferBulkIn[USBDATAEPSIZE];
 
 //Buffer Level 2:  FIFO Loop Data Buffer : 16384 B
 unsigned char FIFOBufferBulkOut[USB_OUT_BUFFER_SIZE];
-unsigned char FIFOBufferBulkIn[USB_IN_BUFFER_SIZE];  
+unsigned char FIFOBufferBulkIn[USB_IN_BUFFER_SIZE]; 
 
 //Buffer Level 3:  Double-buffer for I2S data : MAX 48*2*8*2 = 1536 B
 unsigned char I2SBuffersOut[2][I2S_OUT_BUFFER_SIZE]; // Play
@@ -271,6 +271,7 @@ static unsigned char Init_Play_Setting( void )
     unsigned char  channels_play;
     unsigned char  bit_length;
     
+    
     err  = NULL;
     channels_play = Audio_Configure[1].channel_num ; 
     sample_rate   = Audio_Configure[1].sample_rate ;
@@ -288,9 +289,12 @@ static unsigned char Init_Play_Setting( void )
         return err;
     }
     
-    i2s_play_buffer_size = sample_rate / 1000 * channels_play * 2 * 1;  
-    SSC_Channel_Set_Tx( channels_play, bit_length ); 
-    
+    if( bit_length == 16 ) {
+        i2s_play_buffer_size = sample_rate / 1000 * channels_play * 2 * 2;
+    } else { //32
+        i2s_play_buffer_size = sample_rate / 1000 * channels_play * 2 * 4;        
+    }
+    SSC_Channel_Set_Tx( channels_play, bit_length );  
     
     return err;
 }
@@ -338,12 +342,14 @@ static unsigned char Init_Rec_Setting( void )
         return err;
     }
     
-    i2s_rec_buffer_size  = sample_rate / 1000 * channels_rec  * 2 * 1; 
-    SSC_Channel_Set_Rx( channels_rec, bit_length ); 
-    
-    First_Pack_Padding_BI();
-    
-
+    if( bit_length == 16 ) {
+        i2s_rec_buffer_size  = sample_rate / 1000 * channels_rec  * 2 * 2; 
+    } else { //32
+        i2s_rec_buffer_size  = sample_rate / 1000 * channels_rec  * 2 * 4;        
+    }
+    SSC_Channel_Set_Rx( channels_rec, bit_length );
+          
+    First_Pack_Padding_BI();    
     
     return 0;
 }

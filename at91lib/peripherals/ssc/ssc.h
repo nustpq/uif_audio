@@ -242,7 +242,8 @@ typedef union _SSCMODE
 }SSCMODE ;
 
 
-
+extern unsigned int  DMA_CtrA_Reg_Mode;
+extern unsigned char DMA_CtrA_Len_Shift;
 
 #endif
 

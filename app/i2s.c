@@ -223,7 +223,8 @@ void HDMA_IrqHandler(void)
 
     if( status & ( 1 << BOARD_SSC_IN_DMA_CHANNEL) ) { //record
     
-        TRACE_INFO_NEW_WP("-SI-") ;      
+        TRACE_INFO_NEW_WP("-SI-") ; 
+        //LED_CLEAR_POWER;
         //fill_buf_debug( (unsigned char *)I2SBuffersIn[i2s_buffer_in_index],i2s_rec_buffer_size);   //bulkin tes data for debug 
         if ( i2s_rec_buffer_size > kfifo_get_free_space( &bulkin_fifo ) ) { //if rec fifo buf full    
             kfifo_release(&bulkin_fifo, i2s_rec_buffer_size);       //discard oldest data for newest data  
@@ -253,14 +254,16 @@ void HDMA_IrqHandler(void)
                                      USBDATAEPSIZE,
                                     (TransferCallback) UsbAudioDataTransmit,
                                      0);            
-        }                           
+        } 
+        //LED_SET_POWER;
     } 
 
 ////////////////////////////////////////////////////////////////////////////////
 
     if( status & ( 1 << BOARD_SSC_OUT_DMA_CHANNEL) ) {   //play 
        
-        //printf("-SO-") ;              
+        //printf("-SO-") ;  
+        //LED_CLEAR_DATA;
         temp = kfifo_get_data_size(&bulkout_fifo);        
         TRACE_INFO_NEW_WP("\n\r[%d, %d]",temp,error_bulkout_empt);
         
@@ -339,8 +342,10 @@ void HDMA_IrqHandler(void)
                                      USBDATAEPSIZE,
                                      (TransferCallback) UsbAudioDataReceived,
                                      0);
-       }      
+       } 
+       //LED_SET_DATA;
     } 
+    
 }
 
 
