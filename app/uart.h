@@ -38,7 +38,7 @@
 #define UART_BUFFER_SIZE     ( 128     ) // uart buf size
 
 #define UART0_BAUD           (  115200 )
-#define UART1_BAUD           ( 1000000 )
+#define UART1_BAUD           ( 6000000 )
 
 
 
