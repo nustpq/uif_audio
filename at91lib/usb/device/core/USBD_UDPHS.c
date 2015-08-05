@@ -1890,7 +1890,7 @@ unsigned char USBD_GetState( void )
 void End_Audio_Transfer( void )
 {
     UDPHS_EndOfTransfer(CDCDSerialDriverDescriptors_AUDIODATAOUT, USBD_STATUS_ABORTED);
-    //UDPHS_EndOfTransfer(CDCDSerialDriverDescriptors_AUDIODATAIN, USBD_STATUS_ABORTED);
+    UDPHS_EndOfTransfer(CDCDSerialDriverDescriptors_AUDIODATAIN, USBD_STATUS_ABORTED);
 }
 
 void Get_EP_State( unsigned char bEndpoint )
