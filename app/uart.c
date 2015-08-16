@@ -61,7 +61,7 @@
 
 
 
-volatile unsigned char usart0Buffers[2][UART_BUFFER_SIZE] ;
+volatile unsigned char usart0Buffers[2][UART_BUFFER_SIZE] ;//@0x20100A00 ;
 volatile unsigned char usart0CurrentBuffer = 0 ;
 
 
@@ -325,7 +325,7 @@ void USART1_IrqHandler( void )
     
     if ( status & AT91C_US_TIMEOUT ) {  
         //printf(" iRt.");
-        kfifo_put(&bulkin_fifo_cmd, (unsigned char *)UARTBuffersIn, UART_IN_BUFFER_SIZE - ( AT91C_BASE_US1->US_RCR )) ;
+        kfifo_put(&bulkin_fifo_cmd, (unsigned char *)UARTBuffersIn, UART_IN_BUFFER_SIZE - ( AT91C_BASE_US1->US_RCR ) ) ;           
         //dump_buf_debug((unsigned char *)UARTBuffersIn,UART_IN_BUFFER_SIZE- ( AT91C_BASE_US1->US_RCR ));
         if(  UART_IN_BUFFER_SIZE < kfifo_get_free_space( &bulkin_fifo_cmd ) ) {
             //USART_ReadBuffer( AT91C_BASE_US1,(void *)UARTBuffersIn, UART_IN_BUFFER_SIZE); // Restart read on buffer 
@@ -427,7 +427,7 @@ void UART1_Init( void )
     PIO_Configure(Uart1_Pins, PIO_LISTSIZE(Uart1_Pins));    
     USART_Configure( AT91C_BASE_US1, USART_MODE_ASYNCHRONOUS_HW, UART1_BAUD, MCK );
     
-    ///IRQ_DisableIT(AT91C_ID_US1); 
+    IRQ_DisableIT(AT91C_ID_US1); 
     
     AT91C_BASE_US1->US_IDR  =  0xFFFFFFFF;
     AT91C_BASE_US1->US_CR   = AT91C_US_STTTO; //restart timeout counter

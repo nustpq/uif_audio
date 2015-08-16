@@ -50,20 +50,20 @@
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
-char fw_version[] = "[FW:A:V2.4]";
+char fw_version[] = "[FW:A:V2.41]";
 ////////////////////////////////////////////////////////////////////////////////
 
-//Buffer Level 1:  USB data stream buffer : 512 B
-unsigned char usbBufferBulkOut[USBDATAEPSIZE];
-unsigned char usbBufferBulkIn[USBDATAEPSIZE]; 
-
+//Buffer Level 1:  USB data stream buffer : 64 B
+unsigned char usbBufferBulkOut[USBDATAEPSIZE] ;//@0x20100A80;
+unsigned char usbBufferBulkIn[USBDATAEPSIZE] ; //@0x20100AC0;
+//#pragma location
 //Buffer Level 2:  FIFO Loop Data Buffer : 16384 B
-unsigned char FIFOBufferBulkOut[USB_OUT_BUFFER_SIZE];
-unsigned char FIFOBufferBulkIn[USB_IN_BUFFER_SIZE]; 
+unsigned char FIFOBufferBulkOut[USB_OUT_BUFFER_SIZE] ;
+unsigned char FIFOBufferBulkIn[USB_IN_BUFFER_SIZE] ; 
 
-//Buffer Level 3:  Double-buffer for I2S data : MAX 48*2*8*2 = 1536 B
-unsigned char I2SBuffersOut[2][I2S_OUT_BUFFER_SIZE]; // Play
-unsigned char I2SBuffersIn[2][I2S_IN_BUFFER_SIZE];   // Record
+//Buffer Level 3:  Double-buffer for I2S data : MAX 48*2*8*2*2 = 3072 B
+unsigned char I2SBuffersOut[2][I2S_OUT_BUFFER_SIZE];  // Play //put this 3072B buffer in NAND FLASH Reserved 4224 SRAM(start from0x20100000)
+unsigned char I2SBuffersIn[2][I2S_IN_BUFFER_SIZE] ;   // Record
 // Current I2S buffer index.
 volatile unsigned char i2s_buffer_out_index = 0;
 volatile unsigned char i2s_buffer_in_index  = 0;
@@ -76,23 +76,25 @@ kfifo_t bulkout_fifo;
 kfifo_t bulkin_fifo;
 
 //////////////////////////////////////////
-//Buffer Level 1:  USB Cmd data stream buffer : 512 B
-unsigned char usbCmdBufferBulkOut[USBCMDDATAEPSIZE];
-unsigned char usbCmdBufferBulkIn[USBCMDDATAEPSIZE]; 
+//Buffer Level 1:  USB Cmd data stream buffer : 64 B
+unsigned char usbCmdBufferBulkOut[USBCMDDATAEPSIZE] ;//@0x20100A00;
+unsigned char usbCmdBufferBulkIn[USBCMDDATAEPSIZE]  ;//@0x20100A40;
 
-//Buffer Level 2:  FIFO Loop Data Buffer : 16384 B
-unsigned char FIFOBufferBulkOutCmd[USB_CMD_OUT_BUFFER_SIZE];
-unsigned char FIFOBufferBulkInCmd[USB_CMD_IN_BUFFER_SIZE];  
+//#pragma location = 0x20100000
+//Buffer Level 2:  FIFO Loop Data Buffer : 1024 B
+unsigned char FIFOBufferBulkOutCmd[USB_CMD_OUT_BUFFER_SIZE] ;// @0x20100000;
+unsigned char FIFOBufferBulkInCmd[USB_CMD_IN_BUFFER_SIZE]  ;//  @0x20100500;  
 
-//Buffer Level 3:  Double-buffer for I2S data : MAX 48*2*8*2 = 1536 B
-unsigned char UARTBuffersOut[UART_OUT_BUFFER_SIZE]; // Play
-unsigned char UARTBuffersIn[UART_IN_BUFFER_SIZE];  // Record
+
+//Buffer Level 3:  Double-buffer for UART data : 256 B
+unsigned char UARTBuffersOut[UART_OUT_BUFFER_SIZE] ;// @0x20100A00;  // Play
+unsigned char UARTBuffersIn[UART_IN_BUFFER_SIZE]  ;//  @0x20100C00;  // Record
 // Current I2S buffer index.
 volatile unsigned char uart_buffer_out_index = 0;
 volatile unsigned char uart_buffer_in_index  = 0;
 
-kfifo_t bulkout_fifo_cmd;
-kfifo_t bulkin_fifo_cmd;
+kfifo_t  bulkout_fifo_cmd;
+kfifo_t  bulkin_fifo_cmd;
 ///////////////////////////////////////
 
 volatile unsigned int i2s_play_buffer_size ; //real i2s paly buffer
@@ -599,9 +601,13 @@ void Audio_State_Control( void )
                 }
             break;   
         
-            case AUDIO_CMD_CFG:
-                temp = Audio_Configure[1].sample_rate / 1000 *  Audio_Configure[1].channel_num * 2;
-                if( (temp << PLAY_BUF_DLY_N) > USB_OUT_BUFFER_SIZE ) { //play pre-buffer must not exceed whole play buffer
+            case AUDIO_CMD_CFG: 
+                if( Audio_Configure[1].bit_length == 16 ) {
+                    temp = Audio_Configure[1].sample_rate / 1000 *  Audio_Configure[1].channel_num * 2 * 2;
+                } else { //32
+                    temp = Audio_Configure[1].sample_rate / 1000 *  Audio_Configure[1].channel_num * 2 * 4;        
+                }            
+                if( (temp * PLAY_BUF_DLY_N) > USB_OUT_BUFFER_SIZE ) { //play pre-buffer must not exceed whole play buffer
                     err = ERR_AUD_CFG;
                 }              
             break;

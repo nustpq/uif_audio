@@ -161,6 +161,7 @@ static const char test_packet_buffer[] = {
 // Force HS
 static const unsigned char forceUsbFS = 0;
 
+extern unsigned char USBState ;
 //------------------------------------------------------------------------------
 //      Internal Functions
 //------------------------------------------------------------------------------
@@ -870,7 +871,9 @@ void UDPD_IrqHandler(void)
             AT91C_BASE_UDPHS->UDPHS_CLRINT = AT91C_UDPHS_ENDRESET;
 
             AT91C_BASE_UDPHS->UDPHS_IEN |= AT91C_UDPHS_DET_SUSPD;
+            
             usb_frame_counter = 1 ;
+            USBState = false ;
         }
         // Handle upstream resume interrupt
         else if (status & AT91C_UDPHS_UPSTR_RES) {

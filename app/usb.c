@@ -536,21 +536,22 @@ void USB_Init(void)
 
 void Init_USB_Callback( void )
 {
-    
-    //delay_ms(1000);
-    
-    if ( (USBD_GetState() < USBD_STATE_CONFIGURED)  ||  USBState  ) {
+    //delay_ms(1000);    
+    if ( (USBD_GetState() < USBD_STATE_CONFIGURED)  ||  USBState ) {
         return;
     }
-    
+
     USBState = true ;
+    printf("\r\nInit USB Callback()\r\n");
     
     // Start receiving data on the USB
+    //delay_ms(1000);   
+    //AT91C_BASE_UDPHS->UDPHS_EPTRST = 1<<CDCDSerialDriverDescriptors_CMDDATAIN;
+    //AT91C_BASE_UDPHS->UDPHS_EPT[CDCDSerialDriverDescriptors_CMDDATAIN].UDPHS_EPTSETSTA  = AT91C_UDPHS_KILL_BANK ;  
          
-    printf("\r\nInit USB Callback()\r\n");
-    AT91C_BASE_US1->US_CR     = AT91C_US_RXEN;
+    AT91C_BASE_US1->US_CR     = AT91C_US_RXEN;    
     CDCDSerialDriver_WriteCMD( usbCmdBufferBulkIn,
-                            USBCMDDATAEPSIZE,
+                            8,//USBCMDDATAEPSIZE,
                             (TransferCallback) UsbCmdDataTransmit,
                             0);
     
@@ -560,11 +561,7 @@ void Init_USB_Callback( void )
                             (TransferCallback) UsbCmdDataReceived,
                             0); 
     
-  
-    
-
-    
-    
+      
     //AT91C_BASE_US1->US_IER    = AT91C_US_ENDRX | AT91C_US_TIMEOUT; 
     
     

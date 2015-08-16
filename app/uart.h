@@ -34,11 +34,11 @@
 
 
 
-#define UART_TIMEOUT_BIT     ( 5 * 10  ) // 50=5*10  timeout in 5 Bytes' time  
+#define UART_TIMEOUT_BIT     ( 50 * 10  ) // 50=50*10  timeout in 5 Bytes' time  
 #define UART_BUFFER_SIZE     ( 128     ) // uart buf size
 
 #define UART0_BAUD           (  115200 )
-#define UART1_BAUD           ( 6000000 )
+#define UART1_BAUD           ( 3000000 )
 
 
 

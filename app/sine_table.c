@@ -23,13 +23,14 @@
 * Description : Generate a golden 1kHz sine wave data for USB audio recording for demo.
 * Argument(s) :  *pdata      : pointer to the buffer adress where the generate data is stored.
 *                 size       : buffer size in bytes
-*                 REC_SR_Set : sample rate : 
+*                 REC_SR_Set : sample rate :
+*                 channel_num: channel number
 * Return(s)   : None.
 *
 * Note(s)     : None.
 *********************************************************************************************************
 */
-void Demo_Sine_Gen( unsigned char *pdata, unsigned int size, unsigned int REC_SR_Set )
+void Demo_Sine_Gen( unsigned char *pdata, unsigned int size, unsigned int REC_SR_Set, unsigned char channel_num )
 {
     
     unsigned int    sample_per_ms;
@@ -48,7 +49,7 @@ void Demo_Sine_Gen( unsigned char *pdata, unsigned int size, unsigned int REC_SR
 
     while( sample_index < (size>>1) ) {     
         
-      for( i = 0; i < 6; i++ ) {
+      for( i = 0; i < channel_num; i++ ) {
         
             *((unsigned short *)pdata + sample_index++) =  *(pVal+index) ;
       }

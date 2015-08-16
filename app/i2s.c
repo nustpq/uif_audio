@@ -49,7 +49,7 @@
 
 const Pin SSC_Pins       = PINS_SSC_TX;
 const Pin SSC_Sync_Pin   = PIN_SSC_RF;
-void Demo_Sine_Gen( unsigned char *pdata, unsigned int size, unsigned int REC_SR_Set );
+void Demo_Sine_Gen( unsigned char *pdata, unsigned int size, unsigned int REC_SR_Set, unsigned char channel_num );
 void Alert_Sound_Gen( unsigned char *pdata, unsigned int size, unsigned int REC_SR_Set );
 
 /*
@@ -98,7 +98,7 @@ void Init_I2S_Buffer( void )
     
 #else  
     
-    //Demo_Sine_Gen(I2SBuffersIn[0], I2S_IN_BUFFER_SIZE, 48000);    
+    //Demo_Sine_Gen(I2SBuffersIn[0], I2S_IN_BUFFER_SIZE, 48000,6);    
     memset((unsigned char *)I2SBuffersOut, 0, I2S_OUT_BUFFER_SIZE<<1);
    
     
@@ -259,7 +259,6 @@ void HDMA_IrqHandler(void)
     } 
 
 ////////////////////////////////////////////////////////////////////////////////
-
     if( status & ( 1 << BOARD_SSC_OUT_DMA_CHANNEL) ) {   //play 
        
         //printf("-SO-") ;  
@@ -267,7 +266,7 @@ void HDMA_IrqHandler(void)
         temp = kfifo_get_data_size(&bulkout_fifo);        
         TRACE_INFO_NEW_WP("\n\r[%d, %d]",temp,error_bulkout_empt);
         
-        if( (i2s_play_buffer_size<<PLAY_BUF_DLY_N) <= (temp<<1)) { //play buffer delay (2^PLAY_BUF_DLY_N) ms       
+        if( (i2s_play_buffer_size * PLAY_BUF_DLY_N) <= temp ) { //play buffer delay (2^PLAY_BUF_DLY_N) ms       
             bulkout_trigger = true; //1st buffered enough data will trigger SSC Out
             //printf(" T ");
         }        

@@ -11,7 +11,7 @@ ByteLimit=50
 [DebugChecksum]
 <<<<<<< HEAD
 <<<<<<< HEAD
-Checksum=1842293326
+Checksum=1880766606
 =======
 Checksum=-105934952
 >>>>>>> sync_method
@@ -44,9 +44,14 @@ Fmt8={W}0:value	4	0
 [Disassemble mode]
 mode=0
 [Breakpoints2]
-Bp0=_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\..\app\uart.c}.301.9" 0 0 1 "" 0 "" 0
-Bp1=_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\..\app\uart.c}.328.9" 0 0 1 "" 0 "" 0
-Count=2
+Bp0=_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\..\app\uart.c}.303.9" 0 0 1 "" 0 "" 0
+Bp1=_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\..\app\uart.c}.330.9" 0 0 1 "" 0 "" 0
+Bp2=_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\..\app\uart.c}.272.9" 0 0 1 "" 0 "" 0
+Bp3=_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\..\at91lib\peripherals\usart\usart.c}.154.5" 0 0 1 "" 0 "" 0
+Bp4=_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\..\at91lib\usb\device\core\USBDDriverCb_CfgChanged.c}.51.5" 0 0 1 "" 0 "" 0
+Bp5=_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\..\at91lib\usb\device\core\USBD_UDPHS.c}.916.25" 0 0 1 "" 0 "" 0
+Bp6=_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\..\at91lib\usb\device\core\USBD_UDPHS.c}.920.25" 0 0 1 "" 0 "" 0
+Count=7
 [Log file]
 LoggingEnabled=_ 0
 LogFile=_ ""

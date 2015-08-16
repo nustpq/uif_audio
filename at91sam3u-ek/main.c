@@ -52,7 +52,7 @@ int main( void )
     printf("--  CPU [ATSAM3U4C][%dMHz][%X]\r\n", BOARD_MCK/1000000, AT91C_BASE_NVIC->NVIC_CPUID);
     printf("--  HW version: %s\r\n", BOARD_NAME);
     printf("--  SW version: %s\r\n", fw_version);    
-    printf("    UsbEpSize = %d B, PlayPreBuffer = %d ms\r\n", USBDATAEPSIZE, 1<<PLAY_BUF_DLY_N);
+    printf("    UsbEpSize = %d B, PlayPreBuffer = %d ms\r\n", USBDATAEPSIZE, PLAY_BUF_DLY_N);
     printf("--  Compiled on %s %s by PQ--\r\n", __DATE__, __TIME__);
     printf("--------------------------------------------------\r\n");
         
@@ -62,14 +62,14 @@ int main( void )
     Timer2_Init();
     SysTick_Init();
     UART0_Init();   
- 
+    UART1_Init();
+    
 #ifdef METHOD_BY_RESET_MCU
     USART_Write( AT91C_BASE_US0, 0, 0 ); //Send ACK
     delay_ms(1000);
 #endif
     
-    USB_Init();  
-    UART1_Init();
+    USB_Init();    
     I2S_Init();
  
     while(1) {
