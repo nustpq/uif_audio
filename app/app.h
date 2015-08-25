@@ -17,23 +17,23 @@
 //#define METHOD_BY_RESET_MCU
 
 //Softpack Version
-#define MCK                  BOARD_MCK
-#define I2S_IN_BUFFER_SIZE   3072//1536   //audio data transfered per frame, Max 48 kHz:   48k*8Slot*2ms*4B=3072
-#define I2S_OUT_BUFFER_SIZE  3072//1536  
-#define USBDATAEPSIZE        BOARD_USB_ENDPOINTS_MAXPACKETSIZE( CDCDSerialDriverDescriptors_AUDIODATAIN ) //64//512
-#define USB_OUT_BUFFER_SIZE  16384//32768//16384  //2^14=16384  //USB audio data, size MUST be 2^n .
-#define USB_IN_BUFFER_SIZE   8192//16384  //2^14=16384  //USB audio data, size MUST be 2^n .
+#define MCK                             BOARD_MCK
+#define I2S_IN_BUFFER_SIZE              3072//1536   //audio data transfered per frame, Max 48 kHz:   48k*8Slot*2ms*4B=3072
+#define I2S_OUT_BUFFER_SIZE             3072//1536  
+#define USBDATAEPSIZE                   BOARD_USB_ENDPOINTS_MAXPACKETSIZE( CDCDSerialDriverDescriptors_AUDIODATAIN ) //64//512
+#define USB_OUT_BUFFER_SIZE             16384//32768//16384  //2^14=16384  //USB audio data, size MUST be 2^n .
+#define USB_IN_BUFFER_SIZE              8192//16384  //2^14=16384  //USB audio data, size MUST be 2^n .
 
-#define PLAY_BUF_DLY_N        5//  delay 5 * 2ms = 10 ms // 3072 * 5 = 15360 < 16384
+#define PLAY_BUF_DLY_N                  5//  delay 5 * 2ms = 10 ms // 3072 * 5 = 15360 < 16384
 
 
-/////////////////////////////////
-#define UART_IN_BUFFER_SIZE   32//256//128   
-#define UART_OUT_BUFFER_SIZE  32//256//128   
-#define USBCMDDATAEPSIZE      BOARD_USB_ENDPOINTS_MAXPACKETSIZE( CDCDSerialDriverDescriptors_CMDDATAIN ) //64
-#define USB_CMD_OUT_BUFFER_SIZE  1024//USB audio data, size MUST be 2^n .
-#define USB_CMD_IN_BUFFER_SIZE   1024//USB audio data, size MUST be 2^n .
-/////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+#define UART_IN_BUFFER_SIZE             128   
+#define UART_OUT_BUFFER_SIZE            128   
+#define USBCMDDATAEPSIZE                BOARD_USB_ENDPOINTS_MAXPACKETSIZE( CDCDSerialDriverDescriptors_CMDDATAIN ) //64
+#define USB_CMD_OUT_BUFFER_SIZE         1024//USB audio data, size MUST be 2^n .
+#define USB_CMD_IN_BUFFER_SIZE          1024//USB audio data, size MUST be 2^n .
+
 
 
 // A programmable priority level of 0-15 for each interrupt. A higher level corresponds to a lower 

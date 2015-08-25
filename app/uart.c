@@ -300,7 +300,7 @@ void USART1_IrqHandler( void )
         
         kfifo_put(&bulkin_fifo_cmd, (unsigned char *)UARTBuffersIn, UART_IN_BUFFER_SIZE) ;
         //dump_buf_debug((unsigned char *)UARTBuffersIn,UART_IN_BUFFER_SIZE);
-        if(  UART_IN_BUFFER_SIZE < kfifo_get_free_space( &bulkin_fifo_cmd ) ) {
+        if(  UART_IN_BUFFER_SIZE <= kfifo_get_free_space( &bulkin_fifo_cmd ) ) {
             //USART_ReadBuffer( AT91C_BASE_US1,(void *)UARTBuffersIn, UART_IN_BUFFER_SIZE); // Restart read on buffer 
             AT91C_BASE_US1->US_RPR  = (unsigned int)UARTBuffersIn;
             AT91C_BASE_US1->US_RCR  = UART_IN_BUFFER_SIZE;
@@ -327,7 +327,7 @@ void USART1_IrqHandler( void )
         //printf(" iRt.");
         kfifo_put(&bulkin_fifo_cmd, (unsigned char *)UARTBuffersIn, UART_IN_BUFFER_SIZE - ( AT91C_BASE_US1->US_RCR ) ) ;           
         //dump_buf_debug((unsigned char *)UARTBuffersIn,UART_IN_BUFFER_SIZE- ( AT91C_BASE_US1->US_RCR ));
-        if(  UART_IN_BUFFER_SIZE < kfifo_get_free_space( &bulkin_fifo_cmd ) ) {
+        if(  UART_IN_BUFFER_SIZE <= kfifo_get_free_space( &bulkin_fifo_cmd ) ) {
             //USART_ReadBuffer( AT91C_BASE_US1,(void *)UARTBuffersIn, UART_IN_BUFFER_SIZE); // Restart read on buffer 
             AT91C_BASE_US1->US_RPR  = (unsigned int)UARTBuffersIn;
             AT91C_BASE_US1->US_RCR  = UART_IN_BUFFER_SIZE;
@@ -344,7 +344,7 @@ void USART1_IrqHandler( void )
         
         if ( bulkin_start_cmd ) {
             counter = kfifo_get_data_size(&bulkin_fifo_cmd) ;
-            if( counter ) {     
+            if( counter ) {
                 bulkin_start_cmd = false ;
                 //error_bulkin_empt++;
                 //printf("[%d] ",kfifo_get_data_size(&bulkin_fifo_cmd));

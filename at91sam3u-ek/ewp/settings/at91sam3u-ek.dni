@@ -11,7 +11,7 @@ ByteLimit=50
 [DebugChecksum]
 <<<<<<< HEAD
 <<<<<<< HEAD
-Checksum=1880766606
+Checksum=684263368
 =======
 Checksum=-105934952
 >>>>>>> sync_method
@@ -41,6 +41,21 @@ Fmt5={W}0:srcAddress	4	0
 Fmt6={W}0:status	4	0
 Fmt7={W}0:test	4	0
 Fmt8={W}0:value	4	0
+[TermIOLog]
+LoggingEnabled=_ 0
+LogFile=_ ""
+[CallStackLog]
+Enabled=0
+[DriverProfiling]
+Enabled=0
+Mode=0
+Graph=0
+Symbiont=0
+Exclusions=
+[Log file]
+LoggingEnabled=_ 0
+LogFile=_ ""
+Category=_ 0
 [Disassemble mode]
 mode=0
 [Breakpoints2]
@@ -52,21 +67,6 @@ Bp4=_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\..\at91lib\usb\device\core\USBDDriverCb_CfgC
 Bp5=_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\..\at91lib\usb\device\core\USBD_UDPHS.c}.916.25" 0 0 1 "" 0 "" 0
 Bp6=_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\..\at91lib\usb\device\core\USBD_UDPHS.c}.920.25" 0 0 1 "" 0 "" 0
 Count=7
-[Log file]
-LoggingEnabled=_ 0
-LogFile=_ ""
-Category=_ 0
-[TermIOLog]
-LoggingEnabled=_ 0
-LogFile=_ ""
 [Aliases]
 Count=0
 SuppressDialog=0
-[CallStackLog]
-Enabled=0
-[DriverProfiling]
-Enabled=0
-Mode=0
-Graph=0
-Symbiont=0
-Exclusions=
