@@ -32,8 +32,9 @@
 //------------------------------------------------------------------------------
 
 #include "board.h"
+//#include "bsp.h"
 #include "irq.h"
-#include "exceptions.h"
+//#include "exceptions.h"
 #include <utility/trace.h>
 
 /// The index of IRQ handler in the exception table
@@ -64,7 +65,7 @@ void IRQ_ConfigureIT(
     //unsigned int preemptionPriority,
     //unsigned int subPriority,
     unsigned int priority,
-    IntFunc handler)
+    void( *handler )( void ))
 {
     unsigned int priGroup = __NVIC_PRIO_BITS;
     unsigned int nPre = 8 - priGroup;
@@ -83,8 +84,8 @@ void IRQ_ConfigureIT(
     NVIC_ClearPendingIRQ((IRQn_Type)source);
 
     // Configure interrupt handler
-    //if (handler == 0) handler = IrqHandlerNotUsed;
-      //  GetExceptionTable()[NVIC_IRQ_HANDLER_INDEX + source] = handler;
+ //   if (handler == 0) handler = IrqHandlerNotUsed;
+   //     GetExceptionTable()[NVIC_IRQ_HANDLER_INDEX + source] = handler;
 
     if (subPriority >= (0x01 << nSub))
       subPriority = (0x01 << nSub) - 1;

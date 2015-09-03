@@ -140,7 +140,14 @@ void pcInt(  unsigned char ch )
                 case RULER_CMD_GET_AUDIO_VERSION  :
                     audio_cmd_index = AUDIO_CMD_VERSION ; 
                     state_mac = CMD_STAT_SYNC1; 
-                break ;  
+                break ; 
+                case RULER_CMD_START_RD_VOICE_BUF :                    
+                    state_mac = CMD_STAT_CMD4; 
+                break ;
+                case RULER_CMD_STOP_RD_VOICE_BUF:
+                    audio_cmd_index = AUDIO_CMD_READ_VOICE_BUF_STOP ; 
+                    state_mac = CMD_STAT_SYNC1; 
+                break ; 
                         
                 default :
                     break ;                        
@@ -167,10 +174,21 @@ void pcInt(  unsigned char ch )
           
         break ;
         
+        case CMD_STAT_CMD4 :  
+            *(pChar+PcCmdCounter++) = ch;            
+            if( PcCmdCounter >= 4 ) { //check overflow
+               Voice_Buf_Cfg = *(VOICE_BUF_CFG *)pChar;                
+               audio_cmd_index = AUDIO_CMD_READ_VOICE_BUF_START ; 
+               PcCmdCounter = 0 ;        
+               state_mac = CMD_STAT_SYNC1;                
+            }
+            
+        break ;        
+ 
+        
         case CMD_STAT_DATA :
-            *(pChar+PcCmdCounter) = ch; 
-            PcCmdCounter++;
-            if( PcCmdCounter > 7 ) { //check overflow
+            *(pChar+PcCmdCounter++) = ch;          
+            if( PcCmdCounter >= 8 ) { //check overflow
                Audio_Configure[(*pChar)&0x01] = *(AUDIO_CFG *)pChar;                
                audio_cmd_index = AUDIO_CMD_CFG ; 
                PcCmdCounter = 0 ;        

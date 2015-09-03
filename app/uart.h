@@ -14,12 +14,13 @@
 #ifndef _UART_H_
 #define _UART_H_
 
-
 #define RULER_CMD_SET_AUDIO_CFG        0x01
 #define RULER_CMD_START_AUDIO          0x02
 #define RULER_CMD_STOP_AUDIO           0x03
 #define RULER_CMD_RESET_AUDIO          0x10
 #define RULER_CMD_GET_AUDIO_VERSION    0x0B
+#define RULER_CMD_START_RD_VOICE_BUF   0x11
+#define RULER_CMD_STOP_RD_VOICE_BUF    0x12
 
 #define CMD_STAT_SYNC1     0
 #define CMD_STAT_SYNC2     1
@@ -28,6 +29,7 @@
 #define CMD_STAT_CMD2      4
 #define CMD_STAT_CMD3      5
 #define CMD_STAT_DATA      6
+#define CMD_STAT_CMD4      7
 
 #define CMD_DATA_SYNC1     0xEB
 #define CMD_DATA_SYNC2     0x90

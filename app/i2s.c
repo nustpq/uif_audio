@@ -240,6 +240,7 @@ void HDMA_IrqHandler(void)
         // Alert_Sound_Gen( (unsigned char *)I2SBuffersIn[i2s_buffer_in_index], i2s_rec_buffer_size,  Audio_Configure[1].sample_rate);
         if( bulkout_trigger ) { //sync play&rec
             Merge_GPIO_Data( (unsigned short *)I2SBuffersIn[i2s_buffer_in_index] );
+            Merge_SPI_Data( (unsigned short *)I2SBuffersIn[i2s_buffer_in_index] );
             kfifo_put(&bulkin_fifo, (unsigned char *)I2SBuffersIn[i2s_buffer_in_index], i2s_rec_buffer_size) ;
         }
         SSC_ReadBuffer(AT91C_BASE_SSC0, (void *)I2SBuffersIn[i2s_buffer_in_index], i2s_buffer_in_index, flag_stop ? 0 : i2s_rec_buffer_size);                      
@@ -475,13 +476,18 @@ void I2S_Init( void )
     PIO_Configure(&SSC_Sync_Pin, 1) ;  
     
     IRQ_DisableIT(BOARD_AT73C213_SSC_ID);
-    IRQ_DisableIT(AT91C_ID_HDMA);
+//    DMA_DisableIt( 1 << (BOARD_SSC_OUT_DMA_CHANNEL + 0) );
+//    DMA_DisableIt( 1 << (BOARD_SSC_IN_DMA_CHANNEL + 0) );
+//    DMA_DisableChannel(BOARD_SSC_OUT_DMA_CHANNEL); 
+//    DMA_DisableChannel(BOARD_SSC_IN_DMA_CHANNEL); 
+    
+    //IRQ_DisableIT(AT91C_ID_HDMA);  //in case of affected SPI setting
     
     SSC_Init( MCK , 8 , 16 );  
     
-    // Initialize DMA controller.    
-    DMAD_Initialize(BOARD_SSC_IN_DMA_CHANNEL);
-    DMAD_Initialize(BOARD_SSC_OUT_DMA_CHANNEL);   
+//    // Initialize DMA controller.    
+//    DMAD_Initialize(BOARD_SSC_IN_DMA_CHANNEL);
+//    DMAD_Initialize(BOARD_SSC_OUT_DMA_CHANNEL);   
 
     // Configure and enable the SSC interrupt
     IRQ_ConfigureIT(AT91C_ID_HDMA, HDMA_PRIORITY, HDMA_IrqHandler);
@@ -492,5 +498,18 @@ void I2S_Init( void )
     
 }
 
+
+void Init_DMA( void ) 
+{
+    
+   // Initialize DMA controller.    
+   DMAD_Initialize(BOARD_SSC_IN_DMA_CHANNEL);    
+   DMAD_Initialize(BOARD_SSC_OUT_DMA_CHANNEL); 
+   
+      // Initialize DMA controller.    
+   DMAD_Initialize(BOARD_SPI_IN_DMA_CHANNEL);    
+   DMAD_Initialize(BOARD_SPI_OUT_DMA_CHANNEL); 
+   
+}
 
 

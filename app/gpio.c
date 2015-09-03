@@ -2,7 +2,11 @@
 #include <pio/pio.h>
 #include <pio/pio_it.h>
 #include <utility/led.h>
-#include  "gpio.h"
+#include <stdbool.h>
+#include "kfifo.h"
+#include "app.h"
+#include "gpio.h"
+
 
 //inner use
 static Pin pinsGpios[]  = {          
@@ -210,4 +214,41 @@ void  __ramfunc GPIOPIN_Set_Session( unsigned int pin , unsigned int dat )
 }
 
 
+void Config_GPIO_Interrupt( unsigned char gpio_index, CPU_FNCT_VOID isr_handler )
+{
+    unsigned char per_id;
+   
+    per_id = (unsigned char)pinsGpios[gpio_index].id;
+    IRQ_DisableIT( per_id );
+    pinsGpios[gpio_index].pio->PIO_ISR;
+    pinsGpios[gpio_index].pio->PIO_IER = pinsGpios[gpio_index].mask; //enable int
+    pinsGpios[gpio_index].pio->PIO_ESR = pinsGpios[gpio_index].mask; //edge int
+    pinsGpios[gpio_index].pio->PIO_REHLSR = pinsGpios[gpio_index].mask;//rising edge int
+    pinsGpios[gpio_index].pio->PIO_IFER = pinsGpios[gpio_index].mask;//enable input glitch filter
+     
+    IRQ_ConfigureIT(per_id, GPIO_PRIORITY, isr_handler);
+    IRQ_EnableIT( per_id );
+    
+}
 
+unsigned char Check_GPIO_Intrrupt( unsigned char gpio_index )
+{   
+    unsigned int state = pinsGpios[gpio_index].pio->PIO_ISR;
+    
+    //discard falling edge interruption, because it seems PIO interrupt edge sellection not work
+    if ( (pinsGpios[gpio_index].pio->PIO_PDSR & pinsGpios[gpio_index].mask) == 0) { 
+        return 0; 
+    }
+    
+    if(  state & pinsGpios[gpio_index].mask ) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+void Disable_GPIO_Interrupt( unsigned char gpio_index )
+{  
+    pinsGpios[gpio_index].pio->PIO_IDR = pinsGpios[gpio_index].mask; //enable int
+        
+}

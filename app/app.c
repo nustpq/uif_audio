@@ -40,6 +40,7 @@
 #include <usb/device/cdc-serial/CDCDSerialDriver.h>
 #include <usb/device/cdc-serial/CDCDSerialDriverDescriptors.h>
 #include <pmc/pmc.h>
+#include "im501_comm.h"
 #include "kfifo.h"
 #include "usb.h"
 #include "app.h"
@@ -50,7 +51,7 @@
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
-char fw_version[] = "[FW:A:V2.42]";
+char fw_version[] = "[FW:A:V2.43]";
 ////////////////////////////////////////////////////////////////////////////////
 
 //Buffer Level 1:  USB data stream buffer : 64 B
@@ -69,11 +70,13 @@ volatile unsigned char i2s_buffer_out_index = 0;
 volatile unsigned char i2s_buffer_in_index  = 0;
 
 AUDIO_CFG  Audio_Configure[2]; //[0]: rec config. [1]: play config.
+VOICE_BUF_CFG Voice_Buf_Cfg;
 unsigned char audio_cmd_index     = AUDIO_CMD_IDLE ; 
 unsigned char usb_data_padding    = 0; //add for usb BI/BO padding for first package
 
 kfifo_t bulkout_fifo;
 kfifo_t bulkin_fifo;
+kfifo_t spi_rec_fifo;
 
 //////////////////////////////////////////
 //Buffer Level 1:  USB Cmd data stream buffer : 64 B
@@ -95,6 +98,8 @@ volatile unsigned char uart_buffer_in_index  = 0;
 
 kfifo_t  bulkout_fifo_cmd;
 kfifo_t  bulkin_fifo_cmd;
+
+
 ///////////////////////////////////////
 
 volatile unsigned int i2s_play_buffer_size ; //real i2s paly buffer
@@ -137,6 +142,16 @@ static unsigned int BI_free_size_min      = 100;
 static unsigned int DBGUART_free_size_min = 100; 
 static unsigned int Stop_CMD_Miss_Counter = 0;
 
+
+static unsigned char global_rec_num               ;  //total TDM channels
+static unsigned char global_rec_samples           ;  //samples per package of one interruption 
+
+static unsigned char global_rec_gpio_mask         ; // gpio   to record 
+static unsigned char global_rec_gpio_num          ; //total gpio num to record
+static unsigned char global_rec_gpio_index        ;  //index gpio start at which TDM channel 
+
+
+
 unsigned int counter_play    = 0;
 unsigned int counter_rec     = 0;
 unsigned int test_dump       = 0;
@@ -169,18 +184,15 @@ void Init_Bus_Matix( void )
 * Note(s)     : None.
 *********************************************************************************************************
 */
-static unsigned char global_rec_num               ;  //total TDM channels
-static unsigned char global_rec_gpio_mask         ; // gpio   to record 
-static unsigned char global_rec_gpio_num          ; //total gpio num to record
-static unsigned char global_rec_gpio_index        ;  //index gpio start at which TDM channel 
-static unsigned char global_rec_samples           ;  //samples per package of one interruption 
-
-
 void __ramfunc Merge_GPIO_Data( unsigned short *pdata )
 {
     unsigned int   i, j, n;
     unsigned char  temp;
     unsigned short gpio_data[8];
+    
+    if( global_rec_gpio_num == 0 ) {
+        return;
+    }
     
     GPIOPort_Get_Fast( &temp );
     
@@ -207,6 +219,48 @@ void __ramfunc Merge_GPIO_Data( unsigned short *pdata )
 }
 
 
+//in test, try to merge SPI mono data to the override the last channel data
+void Merge_SPI_Data( unsigned short *pdata )
+{
+    unsigned int    i, j, n;
+    unsigned char   temp;
+    unsigned short *pshort;
+    unsigned int    data_size;
+    
+    if( global_rec_spi_en == 0 ) {
+        return;
+    }
+    
+    pshort = (unsigned short *)(SPI_Data_Buffer2); 
+    
+    if( global_rec_spi_fast == 1 ) { //fast read
+        if(  SPI_BUF_SIZE <= kfifo_get_data_size( &spi_rec_fifo) ) {
+            kfifo_get(&spi_rec_fifo, SPI_Data_Buffer2, SPI_BUF_SIZE);
+        } else {
+            return ;
+        }
+        
+        for( i = 0; i < SPI_BUF_SIZE/2 ; i++ ) {
+            *( pdata + global_rec_gpio_index + global_rec_gpio_num -1 ) = *(pshort+i);               
+            pdata += global_rec_num;
+        } 
+        
+    } else {//real time rec
+        data_size = i2s_rec_buffer_size/Audio_Configure[0].channel_num;
+        if(  data_size <= kfifo_get_data_size( &spi_rec_fifo) ) {
+            kfifo_get(&spi_rec_fifo, SPI_Data_Buffer2, data_size);  
+        } else {
+            return ;
+        }
+        
+        for( i = 0; i < global_rec_samples ; i++ ) { //2ms buffer        
+            *( pdata + global_rec_gpio_index + global_rec_gpio_num -1 ) = *(pshort+i);               
+            pdata += global_rec_num;
+        }
+    }
+        
+            
+}
 
 /*
 *********************************************************************************************************
@@ -223,6 +277,7 @@ void __ramfunc Merge_GPIO_Data( unsigned short *pdata )
 static bool bo_check_sync = false;
 __ramfunc bool First_Pack_Check_BO( unsigned int size )
 {    
+    
     unsigned int i;
     
     for( i = 0; i < size ; i++ )   {
@@ -523,8 +578,23 @@ static void Audio_Stop( void )
 
 }
 
+void Rec_Voice_Buf_Start( void )
+{
+    im501_irq_counter = 0;
+    Enable_SPI_Port(Voice_Buf_Cfg.spi_speed, Voice_Buf_Cfg.spi_mode);
+    Config_GPIO_Interrupt( Voice_Buf_Cfg.gpio_irq, ISR_iM501_IRQ );
+    Init_SPI_FIFO();
+    global_rec_spi_en = 1;
+    
+}
 
 
+void Rec_Voice_Buf_Stop( void )
+{
+    Disable_SPI_Port();
+    Disable_GPIO_Interrupt( Voice_Buf_Cfg.gpio_irq );
+    global_rec_spi_en = 0;
+}
 /*
 *********************************************************************************************************
 *                                    Audio_State_Control()
@@ -558,6 +628,7 @@ void Audio_State_Control( void )
             case AUDIO_CMD_START_REC :                
                 if( audio_state_check != 0 ) {
                     Audio_Stop(); 
+                    Rec_Voice_Buf_Stop(); 
                     Stop_CMD_Miss_Counter++;
                 }                 
                 bulkout_trigger = true; //trigger paly&rec sync
@@ -569,6 +640,7 @@ void Audio_State_Control( void )
             case AUDIO_CMD_START_PLAY :                
                 if( audio_state_check != 0 ) {
                     Audio_Stop(); 
+                    Rec_Voice_Buf_Stop(); 
                     Stop_CMD_Miss_Counter++;
                 }                     
                 err = Audio_Start_Play();  
@@ -578,7 +650,8 @@ void Audio_State_Control( void )
             
             case AUDIO_CMD_START_PALYREC :                
                 if( audio_state_check != 0 ) {
-                    Audio_Stop(); 
+                    Audio_Stop();
+                    Rec_Voice_Buf_Stop(); 
                     Stop_CMD_Miss_Counter++;
                 }                                         
                 err = Audio_Start_Play();
@@ -593,6 +666,7 @@ void Audio_State_Control( void )
             case AUDIO_CMD_STOP : 
                 if( audio_state_check != 0 ) {
                   Audio_Stop(); 
+                  Rec_Voice_Buf_Stop(); 
                   printf("\r\nThis cycle test time cost: ");
                   Get_Run_Time(second_counter - time_start_test);   
                   printf("\r\n\r\n");
@@ -634,6 +708,16 @@ void Audio_State_Control( void )
     
             break;  
             
+            case AUDIO_CMD_READ_VOICE_BUF_START :
+                Rec_Voice_Buf_Start();
+   
+            break; 
+            
+            case AUDIO_CMD_READ_VOICE_BUF_STOP :
+                Rec_Voice_Buf_Stop(); 
+                
+            break;             
+            
             default:         
                 err = ERR_CMD_TYPE;
             break;
@@ -645,7 +729,7 @@ void Audio_State_Control( void )
      if( audio_cmd_index != AUDIO_CMD_VERSION ) {       
          USART_Write( AT91C_BASE_US0, err, 0 ); //ACK
             
-     }     
+     }    
      audio_cmd_index = AUDIO_CMD_IDLE ;      
     
 }

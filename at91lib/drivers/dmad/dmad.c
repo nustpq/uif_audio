@@ -138,7 +138,7 @@ void DMAD_Initialize(unsigned char channel)
     SANITY_CHECK(!(status & (1 << channel)));
     // Clear any pending interrupts on the channel.
     DMA_GetStatus();
-    // Disble the channel.
+    // Disable the channel.
     DMA_DisableChannel(channel);
     // Disable the interrupt
     flag = 0xffffff;

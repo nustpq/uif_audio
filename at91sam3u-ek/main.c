@@ -57,6 +57,7 @@ int main( void )
     printf("--------------------------------------------------\r\n");
         
     Init_GPIO();
+    Disable_SPI_Port();
     Timer0_Init(); 
     Timer1_Init();
     Timer2_Init();
@@ -69,7 +70,8 @@ int main( void )
     delay_ms(1000);
 #endif
     
-    USB_Init();    
+    USB_Init(); 
+    Init_DMA();
     I2S_Init();
  
     while(1) {
@@ -79,6 +81,7 @@ int main( void )
         Audio_State_Control();
         DBGUART_Service();
         Init_USB_Callback();
+        Read_iM501_Voice_Buffer();
       
     }
     
