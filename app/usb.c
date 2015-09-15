@@ -57,10 +57,10 @@ unsigned char USBState  = false ;
 
 unsigned long long total_received = 0 ;
 unsigned long long total_transmit = 0 ;
-unsigned int error_bulkout_full  = 0 ;
-unsigned int error_bulkout_empt  = 0 ;
-unsigned int error_bulkin_full   = 0 ;
-unsigned int error_bulkin_empt   = 0 ;
+unsigned int error_bulkout_full   = 0 ;
+unsigned int error_bulkout_empt   = 0 ;
+unsigned int error_bulkin_full    = 0 ;
+unsigned int error_bulkin_empt    = 0 ;
 
 unsigned long long total_received_cmd = 0 ;
 unsigned long long total_transmit_cmd = 0 ;
@@ -132,7 +132,7 @@ static void VBus_Configure( void )
     }
     else {
         USBD_Disconnect();
-    }           
+    }          
 }
 
 #else

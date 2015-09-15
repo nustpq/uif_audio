@@ -51,7 +51,7 @@
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
-char fw_version[] = "[FW:A:V2.43]";
+char fw_version[] = "[FW:A:V2.431]";
 ////////////////////////////////////////////////////////////////////////////////
 
 //Buffer Level 1:  USB data stream buffer : 64 B
@@ -220,46 +220,61 @@ void __ramfunc Merge_GPIO_Data( unsigned short *pdata )
 
 
 //in test, try to merge SPI mono data to the override the last channel data
-void Merge_SPI_Data( unsigned short *pdata )
+//return the final data size
+//
+unsigned int Merge_SPI_Data( unsigned short *pdata, unsigned int free_size )
 {
-    unsigned int    i, j, n;
-    unsigned char   temp;
+    unsigned int    i;
+    unsigned int    temp;
     unsigned short *pshort;
     unsigned int    data_size;
     
-    if( global_rec_spi_en == 0 ) {
-        return;
+    if( global_rec_spi_en == 0 ) { //SPI recording not enabled
+        return i2s_rec_buffer_size ;
     }
     
-    pshort = (unsigned short *)(SPI_Data_Buffer2); 
+    pshort  = (unsigned short *)(SPI_Data_Buffer2); 
+    temp    = kfifo_get_data_size( &spi_rec_fifo);  
     
-    if( global_rec_spi_fast == 1 ) { //fast read
-        if(  SPI_BUF_SIZE <= kfifo_get_data_size( &spi_rec_fifo) ) {
-            kfifo_get(&spi_rec_fifo, SPI_Data_Buffer2, SPI_BUF_SIZE);
-        } else {
-            return ;
-        }
+    if( global_rec_spi_fast == 1 ) { //fast read.        
         
-        for( i = 0; i < SPI_BUF_SIZE/2 ; i++ ) {
-            *( pdata + global_rec_gpio_index + global_rec_gpio_num -1 ) = *(pshort+i);               
-            pdata += global_rec_num;
+        if( free_size >= SPI_BUF_SIZE ) {            
+            if(  SPI_BUF_SIZE <= temp ) {
+                kfifo_get(&spi_rec_fifo, SPI_Data_Buffer2, SPI_BUF_SIZE);
+                data_size = SPI_BUF_SIZE;
+            } else {
+                kfifo_get(&spi_rec_fifo, SPI_Data_Buffer2, temp);
+                data_size = temp;
+            }   
+        } else {
+            if(  free_size <= temp ) {
+                 kfifo_get(&spi_rec_fifo, SPI_Data_Buffer2, free_size); 
+                 data_size = free_size;
+            } else {
+                 kfifo_get(&spi_rec_fifo, SPI_Data_Buffer2, temp);
+                 data_size = temp;
+            }
+        }
+                   
+        for( i = 0; i < (data_size>>1) ; i++ ) {
+            *pdata++ = *pshort++;    
         } 
         
-    } else {//real time rec
-        data_size = i2s_rec_buffer_size/Audio_Configure[0].channel_num;
-        if(  data_size <= kfifo_get_data_size( &spi_rec_fifo) ) {
-            kfifo_get(&spi_rec_fifo, SPI_Data_Buffer2, data_size);  
+    } else {//real time rec, SSC fifo size is ok
+        if(  free_size <= temp ) {
+             kfifo_get(&spi_rec_fifo, SPI_Data_Buffer2, free_size); 
+             data_size = free_size;
         } else {
-            return ;
+             kfifo_get(&spi_rec_fifo, SPI_Data_Buffer2, temp);
+             data_size = temp;
         }
         
         for( i = 0; i < global_rec_samples ; i++ ) { //2ms buffer        
-            *( pdata + global_rec_gpio_index + global_rec_gpio_num -1 ) = *(pshort+i);               
-            pdata += global_rec_num;
+            *pdata++ = *pshort++;  
         }
     }
         
-            
+    return data_size;       
 }
 
 /*
@@ -399,10 +414,10 @@ static unsigned char Init_Rec_Setting( void )
         return err;
     }
     
-    if( bit_length == 16 ) {
-        i2s_rec_buffer_size  = sample_rate / 1000 * channels_rec  * 2 * 2; 
-    } else { //32
-        i2s_rec_buffer_size  = sample_rate / 1000 * channels_rec  * 2 * 4;        
+    if( bit_length == 16 ) { //16bit case
+        i2s_rec_buffer_size  = sample_rate / 1000 * channels_rec  * 2 * 2; // 2ms * 16bit
+    } else { //32bit case
+        i2s_rec_buffer_size  = sample_rate / 1000 * channels_rec  * 2 * 4; // 2ms * 32bit       
     }
     SSC_Channel_Set_Rx( channels_rec, bit_length );
           
@@ -580,20 +595,26 @@ static void Audio_Stop( void )
 
 void Rec_Voice_Buf_Start( void )
 {
-    im501_irq_counter = 0;
-    Enable_SPI_Port(Voice_Buf_Cfg.spi_speed, Voice_Buf_Cfg.spi_mode);
-    Config_GPIO_Interrupt( Voice_Buf_Cfg.gpio_irq, ISR_iM501_IRQ );
-    Init_SPI_FIFO();
-    global_rec_spi_en = 1;
+    if( global_rec_spi_en == 0) {
+        im501_irq_counter = 0;
+        Enable_SPI_Port(Voice_Buf_Cfg.spi_speed, Voice_Buf_Cfg.spi_mode);
+        Config_GPIO_Interrupt( Voice_Buf_Cfg.gpio_irq, ISR_iM501_IRQ );
+        Init_SPI_FIFO();
+        global_rec_spi_en = 1;
+        Request_Start_Voice_Buf_Trans();
+    }
     
 }
 
 
 void Rec_Voice_Buf_Stop( void )
 {
-    Disable_SPI_Port();
-    Disable_GPIO_Interrupt( Voice_Buf_Cfg.gpio_irq );
-    global_rec_spi_en = 0;
+    if( global_rec_spi_en == 1 ) {
+        Request_Stop_Voice_Buf_Trans();
+        Disable_SPI_Port();
+        Disable_GPIO_Interrupt( Voice_Buf_Cfg.gpio_irq );
+        global_rec_spi_en = 0;
+    }
 }
 /*
 *********************************************************************************************************
@@ -708,15 +729,13 @@ void Audio_State_Control( void )
     
             break;  
             
-            case AUDIO_CMD_READ_VOICE_BUF_START :
-                Rec_Voice_Buf_Start();
-   
-            break; 
-            
-            case AUDIO_CMD_READ_VOICE_BUF_STOP :
-                Rec_Voice_Buf_Stop(); 
-                
-            break;             
+            case AUDIO_CMD_READ_VOICE_BUF : 
+                if( Audio_Configure[0].channel_num != 1 ) { //make sure  no other channel recording while SPI recording
+                    err = ERR_AUD_CFG;
+                } else {
+                    Rec_Voice_Buf_Start();
+                }
+            break;          
             
             default:         
                 err = ERR_CMD_TYPE;

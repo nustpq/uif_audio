@@ -143,11 +143,7 @@ void pcInt(  unsigned char ch )
                 break ; 
                 case RULER_CMD_START_RD_VOICE_BUF :                    
                     state_mac = CMD_STAT_CMD4; 
-                break ;
-                case RULER_CMD_STOP_RD_VOICE_BUF:
-                    audio_cmd_index = AUDIO_CMD_READ_VOICE_BUF_STOP ; 
-                    state_mac = CMD_STAT_SYNC1; 
-                break ; 
+                break ;   
                         
                 default :
                     break ;                        
@@ -177,8 +173,12 @@ void pcInt(  unsigned char ch )
         case CMD_STAT_CMD4 :  
             *(pChar+PcCmdCounter++) = ch;            
             if( PcCmdCounter >= 4 ) { //check overflow
-               Voice_Buf_Cfg = *(VOICE_BUF_CFG *)pChar;                
-               audio_cmd_index = AUDIO_CMD_READ_VOICE_BUF_START ; 
+               //Voice_Buf_Cfg = *(VOICE_BUF_CFG *)pChar;
+               unsigned char *pDest = (unsigned char *)&Voice_Buf_Cfg;
+               for (unsigned char k = 0; k<sizeof(Voice_Buf_Cfg);k++) {
+                  *(pDest+k) = *(pChar+k);
+               }    
+               audio_cmd_index = AUDIO_CMD_READ_VOICE_BUF ; 
                PcCmdCounter = 0 ;        
                state_mac = CMD_STAT_SYNC1;                
             }
@@ -189,7 +189,11 @@ void pcInt(  unsigned char ch )
         case CMD_STAT_DATA :
             *(pChar+PcCmdCounter++) = ch;          
             if( PcCmdCounter >= 8 ) { //check overflow
-               Audio_Configure[(*pChar)&0x01] = *(AUDIO_CFG *)pChar;                
+               //Audio_Configure[(*pChar)&0x01] = *(AUDIO_CFG *)pChar; 
+               unsigned char *pDest = (unsigned char *)&(Audio_Configure[(*pChar)&0x01]);
+               for (unsigned char k = 0; k<sizeof(Audio_Configure[0]);k++) {
+                   *(pDest+k) = *(pChar+k);
+               }               
                audio_cmd_index = AUDIO_CMD_CFG ; 
                PcCmdCounter = 0 ;        
                state_mac = CMD_STAT_SYNC1;                

@@ -135,5 +135,8 @@ extern unsigned char SPI_WriteBuffer_API(  void *buffer,  unsigned int length);
 extern unsigned char SPI_ReadBuffer_API(  void *buffer,  unsigned int length);
 extern unsigned char SPI_WriteReadBuffer_API(  void *buffer_r,  void *buffer_w, unsigned int length_r,  unsigned int length_w );
 
+extern void Enable_SPI_Port( unsigned int spi_clk, unsigned char format );
+extern void Disable_SPI_Port( void );
+
 #endif //#ifndef SPI_H
 

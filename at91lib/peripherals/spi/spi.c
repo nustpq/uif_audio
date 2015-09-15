@@ -670,8 +670,8 @@ void SPI_Init(  unsigned int spi_clk, unsigned char format )  //based on polling
          
 void Enable_SPI_Port( unsigned int spi_clk, unsigned char format )
 {
-    SPI_Init(spi_clk,format);
-    //PIO_Configure(spi_pins, PIO_LISTSIZE(spi_pins) ); 
+    //SPI_Init(spi_clk,format);
+    PIO_Configure(spi_pins, PIO_LISTSIZE(spi_pins) ); 
 }
 
 

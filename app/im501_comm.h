@@ -23,9 +23,13 @@
 #define  TO_DSP_CMD_ADDR                 (0x0FFFBFF8)
 #define  TO_DSP_CMD_OFFSET_ATTR( x )     ( (x) & 0xFFFF )
 #define  TO_DSP_CMD_OFFSET_STAT( x )     ( ((x) & 0xFF) << 24 )
+#define  TO_DSP_CMD_REQ_START_BUF_TRANS   0x19
+#define  TO_DSP_CMD_REQ_STOP_BUF_TRANS    0x1D
+#define  TO_DSP_CMD_REQ_ENTER_PSM         0x0D
 
 #define  TO_HOST_CMD_ADDR                (0x0FFFBFFC)
-#define  HW_VOICE_BUF_START              (0x0FFF3EE0)  // DRAM voice buffer : 0x0FFF3EE0 ~ 0x0FFFBEDF 
+#define  HW_VOICE_BUF_START              (0x0FFF3EE0)  // DRAM voice buffer : 0x0FFF3EE0 ~ 0x0FFFBEDF = 32kB
+#define  HW_VOICE_BUF_END                (0x0FFFBEDF)  //
 #define  HW_BUF_RX_L                     (0x0FFFE000)  //1kB
 #define  HW_BUF_RX_R                     (0x0FFFE400)  //1kB
 #define  HW_BUF_RX_SIZE                  (2048)
@@ -67,12 +71,12 @@
 
 #define SPI_BUS_ERR                      179u
 #define I2C_BUS_ERR                      180u
+#define TO_501_CMD_ERR                   181u 
 
 #define SPI_FIFO_SIZE                    (3072)
 #define SPI_BUF_SIZE                     (1024)
 
-extern unsigned int global_rec_spi_en;
-
+extern unsigned int  global_rec_spi_en;
 extern unsigned char global_rec_spi_fast;
 
 extern unsigned int im501_irq_counter;
@@ -80,11 +84,11 @@ extern unsigned char SPI_Data_Buffer[];
 extern unsigned char SPI_Data_Buffer2[]; 
 
 
-typedef struct {
-    unsigned short attri;
-    unsigned char  cmd_byte;
-    unsigned char  status;
-}To_Host_CMD ;
+//typedef struct {
+//    unsigned short attri;
+//    unsigned char  cmd_byte;
+//    unsigned char  status;
+//}To_Host_CMD ;
 //
 //typedef struct {
 //    unsigned short attri;
@@ -94,18 +98,17 @@ typedef struct {
 //}To_501_CMD ;
 
 
-//typedef struct {
-//    unsigned int   attri : 24;
-//    unsigned int   cmd_byte : 7;
-//    unsigned int   status : 1;
-//}To_Host_CMD ;
-
-
+typedef struct {
+    unsigned int   attri    : 24;
+    unsigned int   cmd_byte : 7;
+    unsigned int   status   : 1;
+}To_Host_CMD ;
 
 typedef struct {
-    unsigned int  attri : 24 ;
+    unsigned int  attri        : 24 ;
     unsigned int  cmd_byte_ext : 7 ;
-    unsigned int  status : 1 ;
+    unsigned int  status       : 1 ;
+    
     unsigned char cmd_byte;
 }To_501_CMD ;
 
@@ -143,7 +146,6 @@ unsigned char im501_switch_i2c_spi( unsigned char if_type, unsigned char spi_mod
 unsigned char test_send_cmd_to_im501( void );
 
 //unsigned char Record_iM501_Voice_Buffer( unsigned char gpio_irq, unsigned int timeout_ms );
-void Read_iM501_Voice_Buffer( void );
 
 unsigned char Write_CMD_To_iM501( unsigned char cmd_index, unsigned short para );
 
@@ -151,5 +153,10 @@ unsigned char resp_to_host_command( void );
 
 void ISR_iM501_IRQ( void );
 
+
+void Read_iM501_Voice_Buffer( void );
+unsigned char Request_Start_Voice_Buf_Trans( void );
+unsigned char Request_Stop_Voice_Buf_Trans( void );
+unsigned char Request_Enter_PSM( void );
 
 #endif

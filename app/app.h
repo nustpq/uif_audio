@@ -28,7 +28,7 @@
 
 #define PLAY_BUF_DLY_N                  5//  delay 5 * 2ms = 10 ms // 3072 * 5 = 15360 < 16384
 
-
+#define SPI_CLK                         1000000
 ////////////////////////////////////////////////////////////////////////////////
 #define UART_IN_BUFFER_SIZE             128   
 #define UART_OUT_BUFFER_SIZE            128   
@@ -58,8 +58,8 @@
 #define  AUDIO_CMD_CFG                  0x05
 #define  AUDIO_CMD_VERSION              0x06
 #define  AUDIO_CMD_RESET                0x07
-#define  AUDIO_CMD_READ_VOICE_BUF_START 0x08
-#define  AUDIO_CMD_READ_VOICE_BUF_STOP  0x09
+#define  AUDIO_CMD_READ_VOICE_BUF       0x08
+
 
 #define  AUDIO_STATE_STOP               0x00
 #define  AUDIO_STATE_PLAY               0x01
@@ -77,9 +77,9 @@
 
 
 typedef struct {
-  
+ 
   unsigned char  type;//Rec: =0x00, Play: =0x01
-  unsigned char  channel_num; //1~8
+  unsigned char  channel_num; //1~8  
   unsigned short sample_rate;
   unsigned char  bit_length; // 16, 24, 32
   unsigned char  gpio_rec_num;
@@ -93,6 +93,8 @@ typedef struct {
   unsigned int   spi_speed;
   unsigned char  spi_mode;  
   unsigned char  gpio_irq; 
+  unsigned char  reserved1;
+  unsigned char  reserved2;
 }VOICE_BUF_CFG;
 
 typedef void  (*CPU_FNCT_VOID)(void);

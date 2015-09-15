@@ -57,6 +57,7 @@ int main( void )
     printf("--------------------------------------------------\r\n");
         
     Init_GPIO();
+    SPI_Init( SPI_CLK, 0);
     Disable_SPI_Port();
     Timer0_Init(); 
     Timer1_Init();
@@ -74,6 +75,8 @@ int main( void )
     Init_DMA();
     I2S_Init();
  
+    
+    
     while(1) {
       
         //Debug_Info(); 

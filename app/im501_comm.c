@@ -29,6 +29,8 @@
 */
 
 #include <stdbool.h>
+#include <intrinsics.h>
+#include <tc/tc.h>
 #include "im501_comm.h"
 #include "kfifo.h"
 #include "app.h"
@@ -212,7 +214,7 @@ unsigned char im501_write_reg_spi( unsigned char reg_addr, unsigned char data )
     unsigned char buf[3];
     
     err    =  NO_ERR;
-    buf[0] =  IM501_I2C_CMD_REG_WR_1;
+    buf[0] =  IM501_SPI_CMD_REG_WR;
     buf[1] =  reg_addr;
     buf[2] =  data;
       
@@ -306,7 +308,7 @@ unsigned char im501_read_dram_spi( unsigned int mem_addr, unsigned char *pdata )
     unsigned char *pbuf;
     
     err   =  NO_ERR;
-    pbuf = (unsigned char *)SPI_Data_Buffer; //global usage
+    pbuf  = (unsigned char *)SPI_Data_Buffer; //global usage
   
     
     buf[0] =  IM501_SPI_CMD_DM_RD;
@@ -386,13 +388,14 @@ unsigned char im501_burst_read_dram_spi( unsigned int mem_addr, unsigned char **
           
     *pdata =  pbuf + 1; 
     
-#else   
+#else 
+    
     *pdata =  pbuf;
-    //Demo_Sine_Gen( pbuf, data_len, 16000, 1 );
-    for(unsigned int i = 0 ; i<(data_len>>1); i++ ) {
-        *((unsigned short *)pbuf +i) = i; 
-    }
- 
+    Demo_Sine_Gen( pbuf, data_len, 16000, 1 );
+//    for(unsigned int i = 0 ; i<(data_len>>1); i++ ) {
+//        *((unsigned short *)pbuf +i) = i; 
+//    }
+
 #endif
     
     return err;
@@ -513,7 +516,7 @@ unsigned char im501_switch_i2c_spi( unsigned char if_type, unsigned char spi_mod
     if( err != 0 ) {
         return err;
     }
-    if(( data & 0x04 ) && (if_type==1) ) { // I2C mode, need switch to SPI
+    if(( data & 0x04 ) && (if_type == 1) ) { // I2C mode, need switch to SPI
         err = im501_write_reg_spi(iM501_I2C_SPI_REG, 0x80+(spi_mode&0x03));
         if( err != 0 ) {
             return err;
@@ -535,6 +538,8 @@ unsigned char im501_switch_i2c_spi( unsigned char if_type, unsigned char spi_mod
 
 
 
+
+
 unsigned char fetch_voice_data( unsigned int start_addr, unsigned int data_length )
 {
     unsigned char err;
@@ -548,8 +553,8 @@ unsigned char fetch_voice_data( unsigned int start_addr, unsigned int data_lengt
         err = im501_burst_read_dram_spi( start_addr,  &pbuf,  SPI_BUF_SIZE ); 
         if( err != NO_ERR ){ 
             return err;
-        }
-        start_addr +=  SPI_BUF_SIZE;      
+        }    
+        start_addr +=  SPI_BUF_SIZE;               
         while ( SPI_BUF_SIZE > kfifo_get_free_space( &spi_rec_fifo ) ) ; //atom operation?
         kfifo_put(&spi_rec_fifo, pbuf, SPI_BUF_SIZE);        
     }
@@ -558,9 +563,9 @@ unsigned char fetch_voice_data( unsigned int start_addr, unsigned int data_lengt
         err = im501_burst_read_dram_spi( start_addr,  &pbuf,  b ); 
         if( err != NO_ERR ){ 
             return err;
-        }
-        while ( b > kfifo_get_free_space( &spi_rec_fifo ) ) ; //atom operation?
-        kfifo_put(&spi_rec_fifo, pbuf, SPI_BUF_SIZE); 
+        }        
+        while ( b > kfifo_get_free_space( &spi_rec_fifo ) ); //atom operation?
+        kfifo_put(&spi_rec_fifo, pbuf, SPI_BUF_SIZE);        
     }
     
     return err;
@@ -569,34 +574,30 @@ unsigned char fetch_voice_data( unsigned int start_addr, unsigned int data_lengt
 
 unsigned char parse_to_host_command( To_Host_CMD cmd )
 {
-    unsigned char err;
-    //unsigned char *pbuf;
+    unsigned char err; 
     unsigned int address;
-
        
     switch( cmd.cmd_byte ) {
+        
+        case 0x40 : //Infom host Keywords detected
+
+        break;
         
         case 0x41 : //Reuest host to read To-Host Buffer-Fast
             voice_buf_data.length   = (cmd.attri & 0xFFFF ) << 1;  //sample to bytes
             address = HW_VOICE_BUF_START;
             global_rec_spi_fast = 1;
-            //voice_buf_data.index    = 1;
-            //voice_buf_data.done     = (cmd.attri>>15) & 0x01;
-            //err = im501_burst_read_dram_spi( HW_BUF_RX_L,  &pbuf,  voice_buf_data.length );
             err = fetch_voice_data( address, voice_buf_data.length ); 
-            if( err != NO_ERR ){ 
+            if( err != NO_ERR ){
                 return err;
             }
         break;
         
         case 0x42 : //Reuest host to read To-Host Buffer-RealTime            
-            voice_buf_data.length   = (cmd.attri & 0xFFFF ) << 1;  //sample to bytes
-            address = 0x0FFF0000 + (cmd.attri&0xFFFF);
-            global_rec_spi_fast = 0;
-            //voice_buf_data.index    =  cmd.attri & 0x7FFF;
-            //voice_buf_data.done     = (cmd.attri>>15) & 0x01;
-            //err = im501_burst_read_dram_spi( HW_BUF_RX_L,  &pbuf,  voice_buf_data.length );
-            err = fetch_voice_data( address,   voice_buf_data.length );
+            voice_buf_data.length   = ( (cmd.attri & 0xFF0000 )>>16 ) << 1;  //sample to bytes
+            address = HW_VOICE_BUF_START + (cmd.attri & 0xFFFF);
+            global_rec_spi_fast = 0;  
+            err = fetch_voice_data( address,  voice_buf_data.length );
             if( err != NO_ERR ){ 
                 return err;
             }
@@ -607,14 +608,7 @@ unsigned char parse_to_host_command( To_Host_CMD cmd )
         break;
         
     }
-        
-//    if( err == 0 ) {
-//        voice_buf_data.pdata = pbuf ;
-//        //err = save_voice_buffer_to_flash(&voice_buf_data);          
-//        
-//    }
-
-    
+            
     return err;
     
 }
@@ -624,25 +618,30 @@ unsigned char parse_to_host_command( To_Host_CMD cmd )
 unsigned char send_to_dsp_command( To_501_CMD cmd )
 {
     unsigned char err;
+    unsigned int  i;
     
     err = im501_write_dram_spi( TO_DSP_CMD_ADDR, (unsigned char *)&cmd );
     if( err != 0 ){ 
         return err;
     }
-    err = im501_write_reg_spi( 0x01, cmd.cmd_byte );
+    err = im501_write_reg_spi( 0x01, cmd.cmd_byte ); //generate interrupt to DSP
     if( err != 0 ){ 
         return err;
     }
     
-    delay_ms(1);
+    for( i = 0; i< 50; i++ ) {   //wait for (50*100us = 5ms) to check if DSP finished 
+        err = im501_read_dram_spi( TO_DSP_CMD_ADDR, (unsigned char *)&cmd );
+        if( err != 0 ){ 
+            return err;
+        }
+        if( cmd.status != 0 ) {
+            err = TO_501_CMD_ERR;
+        } else {
+            err = 0;
+        }
+        delay_us(100); //??
+    }
     
-    err = im501_read_dram_spi( TO_DSP_CMD_ADDR, (unsigned char *)&cmd );
-    if( err != 0 ){ 
-        return err;
-    }
-    if( cmd.status != 0 ) {
-        err = cmd.status;
-    }
     return err;
     
 }
@@ -692,16 +691,15 @@ void ISR_iM501_IRQ( void )
 
 
 
-
-
 unsigned char Write_CMD_To_iM501( unsigned char cmd_index, unsigned short para )
 {
+    
     unsigned char err;
-    To_501_CMD cmd;
+    To_501_CMD    cmd;
     
-    cmd.cmd_byte = ((cmd_index & 0x3F) << 2) | 0x02; //D[1]   : "1", interrupt DSP. This bit generates NMI (non-mask-able interrupt)
+    cmd.cmd_byte = cmd_index;//((cmd_index & 0x3F) << 2) | 0x01; //D[1] : "1", interrupt DSP. This bit generates NMI (non-mask-able interrupt), D[0]: "1" generate mask-able interrupt
     cmd.attri    = para & 0xFFFF ;
-    
+    cmd.status   = 1;
     err = send_to_dsp_command( cmd );
     
     return err;
@@ -709,34 +707,62 @@ unsigned char Write_CMD_To_iM501( unsigned char cmd_index, unsigned short para )
 }
 
 
+
+unsigned char Request_Start_Voice_Buf_Trans( void )
+{
+    
+    unsigned char err;
+        
+    err = Write_CMD_To_iM501( TO_DSP_CMD_REQ_START_BUF_TRANS, 0 );
+ 
+    return err;
+    
+}
+
+unsigned char Request_Stop_Voice_Buf_Trans( void )
+{
+    
+    unsigned char err;
+        
+    err = Write_CMD_To_iM501( TO_DSP_CMD_REQ_STOP_BUF_TRANS, 0 );
+ 
+    return err;
+    
+}
+
+unsigned char Request_Enter_PSM( void )
+{
+    
+    unsigned char err;
+        
+    err = Write_CMD_To_iM501( TO_DSP_CMD_REQ_ENTER_PSM, 0 );
+ 
+    return err;
+    
+}
+
 void Read_iM501_Voice_Buffer( void )
 {  
+    
     unsigned char err;
-    To_Host_CMD   cmd;
-    if( global_rec_spi_en == 1 ) {
+      
+    if( global_rec_spi_en == 0 ) {
+        return;
+    }
         
 #ifdef DEBUG_VOICE_BUFFER  
         im501_irq_counter = 1;   
 #endif
-        if ( im501_irq_counter ) {
-            //APP_TRACE_INFO(("::ISR_iM501_IRQ : %d\r\n",im501_irq_counter)); //for test
-            im501_irq_counter--;
-            err = resp_to_host_command( );    
-            if( err != NO_ERR ){ 
-                return ;
-            }
-            
-    //        if(voice_buf_data.index == 1) {
-    //            time_rec = OSTimeGet(); 
-    //        }
-    //        if( voice_buf_data.done ) {
-    //            time_rec = OSTimeGet() - time_rec;
-    //        }
-            
-        } 
-    }
-
     
+    if ( im501_irq_counter-- ) {            
+        //APP_TRACE_INFO(("::ISR_iM501_IRQ : %d\r\n",im501_irq_counter));   //for test       
+        err = resp_to_host_command( );            
+        if( err != NO_ERR ){ 
+            return ;
+        }           
+            
+    } 
+       
 }
 
 

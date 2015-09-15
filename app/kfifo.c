@@ -30,6 +30,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <irq/irq.h>
+//#include <intrinsics.h>
 #include "kfifo.h"
 
 
@@ -43,7 +44,7 @@
 //         typeof(y) _min2 = (y); \
 //         (void) (&_min1 == &_min2); \
 //         _min1 < _min2 ? _min1 : _min2; })
-   
+
 inline unsigned int min( unsigned int min_var_a, unsigned int min_var_b )
 { 
 
@@ -71,6 +72,7 @@ void kfifo_reset(kfifo_t *fifo) {
 	fifo->in = fifo->out = 0;
 }
 
+//#pragma optimize= none
 unsigned int kfifo_put(kfifo_t *fifo, unsigned char *buffer, unsigned int len) {
 	unsigned int l;
         //__disable_interrupt(); //PQ
@@ -87,6 +89,7 @@ unsigned int kfifo_put(kfifo_t *fifo, unsigned char *buffer, unsigned int len) {
 }
 
 //extern kfifo_t bulkout_fifo;
+//#pragma optimize= none
 unsigned int kfifo_get(kfifo_t *fifo, unsigned char *buffer, unsigned int len) {
 	unsigned int l;       
         //__disable_interrupt(); //PQ
@@ -112,12 +115,14 @@ __ramfunc unsigned int kfifo_release(kfifo_t *fifo, unsigned int len) {
 	return len;
 }
 
+
 //no interruption for debug printf use
 __ramfunc unsigned int kfifo_get_free_space(kfifo_t *fifo) {
     
     return( fifo->size - fifo->in + fifo->out );     
 
 }
+
 
 __ramfunc unsigned int kfifo_get_data_size(kfifo_t *fifo) {
            

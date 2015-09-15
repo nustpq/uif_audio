@@ -226,7 +226,8 @@ void HDMA_IrqHandler(void)
         TRACE_INFO_NEW_WP("-SI-") ; 
         //LED_CLEAR_POWER;
         //fill_buf_debug( (unsigned char *)I2SBuffersIn[i2s_buffer_in_index],i2s_rec_buffer_size);   //bulkin tes data for debug 
-        if ( i2s_rec_buffer_size > kfifo_get_free_space( &bulkin_fifo ) ) { //if rec fifo buf full    
+        temp = kfifo_get_free_space( &bulkin_fifo );
+        if ( i2s_rec_buffer_size > temp ) { //if rec fifo buf full    
             kfifo_release(&bulkin_fifo, i2s_rec_buffer_size);       //discard oldest data for newest data  
             error_bulkin_full++; //bulkin fifo full        
         }
@@ -234,14 +235,16 @@ void HDMA_IrqHandler(void)
              memset((unsigned char *)I2SBuffersIn[i2s_buffer_in_index],0x10,i2s_rec_buffer_size);  
         }
 //        if( test_dump++ == 0 ) {
-//            memset((unsigned char *)I2SBuffersIn[i2s_buffer_in_index],0x20,i2s_rec_buffer_size); 
+//            memset((udnsigned char *)I2SBuffersIn[i2s_buffer_in_index],0x20,i2s_rec_buffer_size); 
 //        }
         //fill_buf_debug( (unsigned char *)I2SBuffersIn[i2s_buffer_in_index],i2s_rec_buffer_size);
-        // Alert_Sound_Gen( (unsigned char *)I2SBuffersIn[i2s_buffer_in_index], i2s_rec_buffer_size,  Audio_Configure[1].sample_rate);
+        //Alert_Sound_Gen( (unsigned char *)I2SBuffersIn[i2s_buffer_in_index], i2s_rec_buffer_size,  Audio_Configure[1].sample_rate);
         if( bulkout_trigger ) { //sync play&rec
             Merge_GPIO_Data( (unsigned short *)I2SBuffersIn[i2s_buffer_in_index] );
-            Merge_SPI_Data( (unsigned short *)I2SBuffersIn[i2s_buffer_in_index] );
-            kfifo_put(&bulkin_fifo, (unsigned char *)I2SBuffersIn[i2s_buffer_in_index], i2s_rec_buffer_size) ;
+            //      
+            temp = Merge_SPI_Data( (unsigned short *)I2SBuffersIn[i2s_buffer_in_index], temp );
+            //
+            kfifo_put(&bulkin_fifo, (unsigned char *)I2SBuffersIn[i2s_buffer_in_index], temp);//i2s_rec_buffer_size) ;
         }
         SSC_ReadBuffer(AT91C_BASE_SSC0, (void *)I2SBuffersIn[i2s_buffer_in_index], i2s_buffer_in_index, flag_stop ? 0 : i2s_rec_buffer_size);                      
         i2s_buffer_in_index ^= 1; 
@@ -260,6 +263,7 @@ void HDMA_IrqHandler(void)
     } 
 
 ////////////////////////////////////////////////////////////////////////////////
+    
     if( status & ( 1 << BOARD_SSC_OUT_DMA_CHANNEL) ) {   //play 
        
         //printf("-SO-") ;  
