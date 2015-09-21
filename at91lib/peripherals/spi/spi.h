@@ -62,7 +62,7 @@
 //         Definitions
 //------------------------------------------------------------------------------
 
-#define SPI_CLK           10000000
+#define SPI_CLK           (10*1000*1000)
 
 #define NPCS_FPGA         3 
 
@@ -138,5 +138,7 @@ extern unsigned char SPI_WriteReadBuffer_API(  void *buffer_r,  void *buffer_w, 
 extern void Enable_SPI_Port( unsigned int spi_clk, unsigned char format );
 extern void Disable_SPI_Port( void );
 
+
+extern volatile bool dma_spi_trans_done;
 #endif //#ifndef SPI_H
 

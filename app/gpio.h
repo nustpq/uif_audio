@@ -2,7 +2,6 @@
 #define __GPIO_H__
 
 
-
 typedef struct __PORTS
 {                          
     unsigned char porta ;
@@ -41,7 +40,8 @@ extern void GPIOPIN_Get_Fast( unsigned char pin, unsigned char * pdata );
 extern void GPIOPIN_Set_Fast( unsigned char pin , unsigned char data );
 extern void GPIOPort_Get_Fast( unsigned char * pdata );
 
-extern void Config_GPIO_Interrupt( unsigned char gpio_index, CPU_FNCT_VOID isr_handler );
+//extern void Config_GPIO_Interrupt( unsigned char gpio_index, CPU_FNCT_VOID isr_handler );
+extern void Config_GPIO_Interrupt( unsigned char gpio_index, void (*isr_handler)(const Pin *) );
 extern void Disable_GPIO_Interrupt( unsigned char gpio_index );
 extern unsigned char Check_GPIO_Intrrupt( unsigned char gpio_index );
     

@@ -151,7 +151,7 @@ unsigned char Write_CMD_To_iM501( unsigned char cmd_index, unsigned short para )
 
 unsigned char resp_to_host_command( void );
 
-void ISR_iM501_IRQ( void );
+void ISR_iM501_IRQ( const Pin *pPin );
 
 
 void Read_iM501_Voice_Buffer( void );

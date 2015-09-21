@@ -51,7 +51,7 @@
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
-char fw_version[] = "[FW:A:V2.431]";
+char fw_version[] = "[FW:A:V2.432]";
 ////////////////////////////////////////////////////////////////////////////////
 
 //Buffer Level 1:  USB data stream buffer : 64 B
@@ -101,6 +101,7 @@ kfifo_t  bulkin_fifo_cmd;
 
 
 ///////////////////////////////////////
+
 
 volatile unsigned int i2s_play_buffer_size ; //real i2s paly buffer
 volatile unsigned int i2s_rec_buffer_size ;  //real i2s record buffer
@@ -231,13 +232,19 @@ unsigned int Merge_SPI_Data( unsigned short *pdata, unsigned int free_size )
     
     if( global_rec_spi_en == 0 ) { //SPI recording not enabled
         return i2s_rec_buffer_size ;
+        
     }
     
-    pshort  = (unsigned short *)(SPI_Data_Buffer2); 
+    //pshort  = (unsigned short *)(SPI_Data_Buffer2); 
     temp    = kfifo_get_data_size( &spi_rec_fifo);  
     
-    if( global_rec_spi_fast == 1 ) { //fast read.        
-        
+    data_size = free_size >= temp ? temp : free_size ;
+    
+    kfifo_get(&spi_rec_fifo, (unsigned char *)pdata, data_size );
+     
+
+/*     
+    if( global_rec_spi_fast == 1 ) { //fast read.          
         if( free_size >= SPI_BUF_SIZE ) {            
             if(  SPI_BUF_SIZE <= temp ) {
                 kfifo_get(&spi_rec_fifo, SPI_Data_Buffer2, SPI_BUF_SIZE);
@@ -255,11 +262,11 @@ unsigned int Merge_SPI_Data( unsigned short *pdata, unsigned int free_size )
                  data_size = temp;
             }
         }
-                   
+                          
         for( i = 0; i < (data_size>>1) ; i++ ) {
             *pdata++ = *pshort++;    
-        } 
-        
+        }
+                
     } else {//real time rec, SSC fifo size is ok
         if(  free_size <= temp ) {
              kfifo_get(&spi_rec_fifo, SPI_Data_Buffer2, free_size); 
@@ -273,7 +280,8 @@ unsigned int Merge_SPI_Data( unsigned short *pdata, unsigned int free_size )
             *pdata++ = *pshort++;  
         }
     }
-        
+*/  
+    
     return data_size;       
 }
 

@@ -90,7 +90,7 @@ static const Pin pinVbus = PIN_USB_VBUS;
 static void ISR_Vbus(const Pin *pPin)
 {
     // Check current level on VBus
-    if (PIO_Get(&pinVbus)) {
+    if (PIO_Get(&pinVbus)== 0 ) { //EVM2.0 reverted transistor
 
         TRACE_INFO("VBUS conn\r\n");
         USBD_Connect();
@@ -120,9 +120,10 @@ static void VBus_Configure( void )
 
     // Configure PIO
     PIO_Configure(&pinVbus, 1);
+    
     PIO_ConfigureIt(&pinVbus, ISR_Vbus);
-    PIO_EnableIt(&pinVbus);
-
+    PIO_EnableIt(&pinVbus);    
+    
     // Check current level on VBus
     if (PIO_Get(&pinVbus) == 0 ) { //EVM2.0 reverted transistor
 

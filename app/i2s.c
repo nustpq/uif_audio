@@ -42,6 +42,7 @@
 #include <utility/led.h>
 #include <dmad/dmad.h>
 #include <dma/dma.h>
+#include <spi/spi.h>
 #include "kfifo.h"
 #include "app.h"
 #include "usb.h"
@@ -349,6 +350,11 @@ void HDMA_IrqHandler(void)
        } 
        //LED_SET_DATA;
     } 
+    
+     if( status & ( 1 << BOARD_SPI_OUT_DMA_CHANNEL) ) {   //SPI write
+        dma_spi_trans_done = true ; 
+         
+     }
     
 }
 

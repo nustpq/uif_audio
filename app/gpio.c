@@ -13,6 +13,7 @@ static Pin pinsGpios[]  = {
     
     GPIO_0,     GPIO_1,      GPIO_2,     GPIO_3,     GPIO_4,     
     GPIO_5,     GPIO_6,      GPIO_7
+
         
 };
 
@@ -32,7 +33,7 @@ static Pin pinsGpios[]  = {
 
 void Init_GPIO( void )
 {     
-    //PIO_InitializeInterrupts( PIO_PRIORITY ); 
+    PIO_InitializeInterrupts( GPIO_PRIORITY ); 
     
     PIO_Configure( pinsGpios, PIO_LISTSIZE(pinsGpios) ); 
      
@@ -214,7 +215,7 @@ void  __ramfunc GPIOPIN_Set_Session( unsigned int pin , unsigned int dat )
 }
 
 
-void Config_GPIO_Interrupt( unsigned char gpio_index, CPU_FNCT_VOID isr_handler )
+void Config_GPIO_Interrupt0( unsigned char gpio_index, CPU_FNCT_VOID isr_handler )
 {
     unsigned char per_id;
    
@@ -225,11 +226,21 @@ void Config_GPIO_Interrupt( unsigned char gpio_index, CPU_FNCT_VOID isr_handler 
     pinsGpios[gpio_index].pio->PIO_ESR = pinsGpios[gpio_index].mask; //edge int
     pinsGpios[gpio_index].pio->PIO_REHLSR = pinsGpios[gpio_index].mask;//rising edge int
     pinsGpios[gpio_index].pio->PIO_IFER = pinsGpios[gpio_index].mask;//enable input glitch filter
-     
+
     IRQ_ConfigureIT(per_id, GPIO_PRIORITY, isr_handler);
     IRQ_EnableIT( per_id );
     
 }
+
+void Config_GPIO_Interrupt( unsigned char gpio_index, void (*isr_handler)(const Pin *) )
+{
+   
+    PIO_ConfigureIt(&pinsGpios[gpio_index], isr_handler);
+    PIO_EnableIt(&pinsGpios[gpio_index]);
+    
+}
+
+
 
 unsigned char Check_GPIO_Intrrupt( unsigned char gpio_index )
 {   

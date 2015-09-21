@@ -16,7 +16,7 @@
 
 //#define METHOD_BY_RESET_MCU
 
-#define DEBUG_VOICE_BUFFER
+//#define DEBUG_VOICE_BUFFER
 
 //Softpack Version
 #define MCK                             BOARD_MCK
@@ -138,6 +138,7 @@ extern volatile unsigned int i2s_rec_buffer_size ;
 
 extern unsigned char audio_state_check;
 extern unsigned char  sample_index;
+
 
 extern volatile bool bulkin_start;
 extern volatile bool bulkout_start;

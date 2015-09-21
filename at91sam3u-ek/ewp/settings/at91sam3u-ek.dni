@@ -11,7 +11,7 @@ ByteLimit=50
 [DebugChecksum]
 <<<<<<< HEAD
 <<<<<<< HEAD
-Checksum=2036081067
+Checksum=1530107905
 =======
 Checksum=-105934952
 >>>>>>> sync_method
@@ -29,8 +29,17 @@ MixedMode=1
 CStepIntDis=_ 0
 [struct_types]
 Fmt0=AUDIO_CFG-sample_rate	4	0
+Fmt1=VOICE_BUF_CFG-gpio_irq	4	0
+Fmt2=VOICE_BUF_CFG-reserved1	4	0
+Fmt3=VOICE_BUF_CFG-reserved2	4	0
+Fmt4=VOICE_BUF_CFG-spi_mode	4	0
+Fmt5=VOICE_BUF_CFG-spi_speed	4	0
 [array_types]
-Fmt0=unsigned short[8]	4	0
+Fmt0=unsigned char[1025]	4	0
+Fmt1=unsigned char[129]	4	0
+Fmt2=unsigned char[3072]	4	0
+Fmt3=unsigned char[513]	4	0
+Fmt4=unsigned short[8]	4	0
 [watch_formats]
 Fmt0={W}0:address	4	0
 Fmt1={W}0:buffSize	4	0
@@ -38,13 +47,17 @@ Fmt2={W}0:dd	4	0
 Fmt3={W}0:reg_A	4	0
 Fmt4={W}0:reg_B	4	0
 Fmt5={W}0:srcAddress	4	0
-Fmt6={W}0:status	4	0
-Fmt7={W}0:test	4	0
-Fmt8={W}0:value	4	0
+Fmt6={W}0:start_addr	4	0
+Fmt7={W}0:status	4	0
+Fmt8={W}0:test	4	0
+Fmt9={W}0:value	4	0
 [Log file]
 LoggingEnabled=_ 0
 LogFile=_ ""
 Category=_ 0
+[TermIOLog]
+LoggingEnabled=_ 0
+LogFile=_ ""
 [CallStackLog]
 Enabled=0
 [DriverProfiling]
@@ -53,16 +66,12 @@ Mode=0
 Graph=0
 Symbiont=0
 Exclusions=
-[TermIOLog]
-LoggingEnabled=_ 0
-LogFile=_ ""
 [Disassemble mode]
 mode=0
 [Breakpoints2]
-Bp0=_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\..\app\i2s.c}.222.14" 0 0 1 "" 0 "" 0
-Bp1=_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\..\app\im501_comm.c}.716.11" 0 0 1 "" 0 "" 0
-Bp2=_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\..\app\im501_comm.c}.688.9" 0 0 1 "" 0 "" 0
-Count=3
+Bp0=_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\..\app\im501_comm.c}.544.9" 0 0 1 "" 0 "" 0
+Bp1=_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\..\app\im501_comm.c}.554.5" 0 0 1 "" 0 "" 0
+Count=2
 [Aliases]
 Count=0
 SuppressDialog=0

@@ -31,6 +31,7 @@
 #include <stdbool.h>
 #include <intrinsics.h>
 #include <tc/tc.h>
+#include <pio/pio.h>
 #include "im501_comm.h"
 #include "kfifo.h"
 #include "app.h"
@@ -121,8 +122,6 @@ unsigned char im501_read_reg_i2c( unsigned char reg_addr, unsigned char *pdata )
 * Note(s)     :  None.
 *********************************************************************************************************
 */
-
-
 unsigned char im501_read_reg_spi( unsigned char reg_addr, unsigned char *pdata )
 {
     unsigned char err, state;
@@ -131,10 +130,10 @@ unsigned char im501_read_reg_spi( unsigned char reg_addr, unsigned char *pdata )
     
     err  = NO_ERR;
     pbuf = (unsigned char *)SPI_Data_Buffer; //global usage
-  
+    
     buf[0] =  IM501_SPI_CMD_REG_RD;
     buf[1] =  reg_addr;
-    
+
     state =  SPI_WriteReadBuffer_API(  pbuf, 
                                        buf, 
                                        1 , 
@@ -255,7 +254,7 @@ unsigned char im501_read_dram_i2c( unsigned int mem_addr, unsigned char *pdata )
     buf[1] =  mem_addr & 0xFF;
     buf[2] =  (mem_addr>>8) & 0xFF;
     buf[3] =  (mem_addr>>16) & 0xFF;
-    state =  TWID_Write( iM501_I2C_ADDR>>1,
+    state  =  TWID_Write( iM501_I2C_ADDR>>1,
                          0, 
                          0, 
                          buf, 
@@ -312,7 +311,7 @@ unsigned char im501_read_dram_spi( unsigned int mem_addr, unsigned char *pdata )
   
     
     buf[0] =  IM501_SPI_CMD_DM_RD;
-    buf[1] =  mem_addr & 0xFF;
+    buf[1] =  mem_addr & 0xFC;
     buf[2] =  (mem_addr>>8) & 0xFF;
     buf[3] =  (mem_addr>>16) & 0xFF;
     buf[4] =  2;
@@ -322,7 +321,7 @@ unsigned char im501_read_dram_spi( unsigned int mem_addr, unsigned char *pdata )
                                        buf, 
                                        4 , 
                                        sizeof(buf) );
-            
+
     if (state != SUCCESS) {
         err = SPI_BUS_ERR;
         //APP_TRACE_INFO(("\r\nSPI_ReadBuffer_API err = %d",state));
@@ -365,8 +364,6 @@ unsigned char im501_burst_read_dram_spi( unsigned int mem_addr, unsigned char **
     
     err   =  NO_ERR;
     pbuf = (unsigned char *)SPI_Data_Buffer; //global usage    
-
-#ifndef DEBUG_VOICE_BUFFER
     
     buf[0] =  IM501_SPI_CMD_DM_RD;
     buf[1] =  mem_addr     & 0xFF;
@@ -387,17 +384,7 @@ unsigned char im501_burst_read_dram_spi( unsigned int mem_addr, unsigned char **
     } 
           
     *pdata =  pbuf + 1; 
-    
-#else 
-    
-    *pdata =  pbuf;
-    Demo_Sine_Gen( pbuf, data_len, 16000, 1 );
-//    for(unsigned int i = 0 ; i<(data_len>>1); i++ ) {
-//        *((unsigned short *)pbuf +i) = i; 
-//    }
-
-#endif
-    
+       
     return err;
     
 }
@@ -537,26 +524,31 @@ unsigned char im501_switch_i2c_spi( unsigned char if_type, unsigned char spi_mod
 }
 
 
-
-
-
 unsigned char fetch_voice_data( unsigned int start_addr, unsigned int data_length )
 {
     unsigned char err;
     unsigned char *pbuf;
     unsigned int  i,a,b;
-     
+    unsigned int  test;
+    
     a = data_length / SPI_BUF_SIZE ;
     b = data_length % SPI_BUF_SIZE ;
+    test = 0;
     
-    for( i=0; i<a; i++ ) {
+    for( i=0; i<a; i++ ) {   
         err = im501_burst_read_dram_spi( start_addr,  &pbuf,  SPI_BUF_SIZE ); 
         if( err != NO_ERR ){ 
             return err;
         }    
         start_addr +=  SPI_BUF_SIZE;               
         while ( SPI_BUF_SIZE > kfifo_get_free_space( &spi_rec_fifo ) ) ; //atom operation?
-        kfifo_put(&spi_rec_fifo, pbuf, SPI_BUF_SIZE);        
+#if( 0 )   /////////debug
+        unsigned short *ps = (unsigned short *)pbuf;
+        for( unsigned int k = 0; k < (SPI_BUF_SIZE>>1); k++) {
+            *(ps++) = test++;    
+        }
+#endif  ////////////////
+        kfifo_put(&spi_rec_fifo, pbuf, SPI_BUF_SIZE);          
     }
     
     if( b > 0 ) {
@@ -565,12 +557,19 @@ unsigned char fetch_voice_data( unsigned int start_addr, unsigned int data_lengt
             return err;
         }        
         while ( b > kfifo_get_free_space( &spi_rec_fifo ) ); //atom operation?
-        kfifo_put(&spi_rec_fifo, pbuf, SPI_BUF_SIZE);        
+#if( 0 )    /////////debug
+        unsigned short *ps = (unsigned short *)pbuf;
+        for( unsigned int k = 0; k < (b>>1); k++) {
+            *(ps++) = test++;    
+        }
+#endif   ///////////////
+        kfifo_put(&spi_rec_fifo, pbuf, b);        
     }
     
     return err;
     
 }
+
 
 unsigned char parse_to_host_command( To_Host_CMD cmd )
 {
@@ -580,20 +579,22 @@ unsigned char parse_to_host_command( To_Host_CMD cmd )
     switch( cmd.cmd_byte ) {
         
         case 0x40 : //Infom host Keywords detected
-
+              //this is implemeted in HOST MCU 
         break;
         
         case 0x41 : //Reuest host to read To-Host Buffer-Fast
+            printf("\r\n---Get 0x41 CMD--\r\n");
             voice_buf_data.length   = (cmd.attri & 0xFFFF ) << 1;  //sample to bytes
             address = HW_VOICE_BUF_START;
             global_rec_spi_fast = 1;
             err = fetch_voice_data( address, voice_buf_data.length ); 
             if( err != NO_ERR ){
                 return err;
-            }
+            }            
         break;
         
-        case 0x42 : //Reuest host to read To-Host Buffer-RealTime            
+        case 0x42 : //Reuest host to read To-Host Buffer-RealTime    
+            //printf("\r\n---Get 0x42 CMD--\r\n");        
             voice_buf_data.length   = ( (cmd.attri & 0xFF0000 )>>16 ) << 1;  //sample to bytes
             address = HW_VOICE_BUF_START + (cmd.attri & 0xFFFF);
             global_rec_spi_fast = 0;  
@@ -624,7 +625,7 @@ unsigned char send_to_dsp_command( To_501_CMD cmd )
     if( err != 0 ){ 
         return err;
     }
-    err = im501_write_reg_spi( 0x01, cmd.cmd_byte ); //generate interrupt to DSP
+    err = im501_write_reg_spi( 0x01,  cmd.cmd_byte ); //generate interrupt to DSP
     if( err != 0 ){ 
         return err;
     }
@@ -652,29 +653,23 @@ unsigned char resp_to_host_command( void )
 {
     unsigned char err;
     To_Host_CMD   cmd;
-    
-#ifndef DEBUG_VOICE_BUFFER    
+      
     err = im501_read_dram_spi( TO_HOST_CMD_ADDR, (unsigned char *)&cmd );
     if( err != 0 ){
         return err;
     }
-#else
-    cmd.cmd_byte = 0x41;
-    cmd.attri    = 32768/2; //32k bytes, 16k samples
-#endif    
-    
+   
     err = parse_to_host_command( cmd );
     if( err != 0 ){ 
         return err;
     }
     
-#ifndef DEBUG_VOICE_BUFFER      
     cmd.status = 0;
     err = im501_write_dram_spi( TO_HOST_CMD_ADDR, (unsigned char *)&cmd );
     if( err != 0 ){ 
         return err;
     }
-#endif
+
     
     return err;
     
@@ -682,11 +677,11 @@ unsigned char resp_to_host_command( void )
 
 
 
-void ISR_iM501_IRQ( void )
+void ISR_iM501_IRQ( const Pin *pPin )
 {
-    if( Check_GPIO_Intrrupt( Voice_Buf_Cfg.gpio_irq ) ) {                       
+   // if( Check_GPIO_Intrrupt( Voice_Buf_Cfg.gpio_irq ) ) {                       
         im501_irq_counter++;        
-    }
+   // }
 }
 
 
@@ -749,20 +744,23 @@ void Read_iM501_Voice_Buffer( void )
     if( global_rec_spi_en == 0 ) {
         return;
     }
-        
-#ifdef DEBUG_VOICE_BUFFER  
-        im501_irq_counter = 1;   
-#endif
     
-    if ( im501_irq_counter-- ) {            
-        //APP_TRACE_INFO(("::ISR_iM501_IRQ : %d\r\n",im501_irq_counter));   //for test       
-        err = resp_to_host_command( );            
-        if( err != NO_ERR ){ 
-            return ;
-        }           
-            
-    } 
-       
+                 
+    global_rec_spi_fast = 1;
+    fetch_voice_data( HW_VOICE_BUF_START, 32768); 
+           
+     
+//    if ( im501_irq_counter ) { 
+//        im501_irq_counter--;
+//        //APP_TRACE_INFO(("::ISR_iM501_IRQ : %d\r\n",im501_irq_counter));   //for test       
+//        err = resp_to_host_command( );            
+//        if( err != NO_ERR ){ 
+//            return ;
+//        }           
+//            
+//    }
+    
+    
 }
 
 

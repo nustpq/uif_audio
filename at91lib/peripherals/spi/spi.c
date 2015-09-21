@@ -34,6 +34,7 @@
 
 #include <board.h>
 #include <pio/pio.h>
+#include <stdbool.h>
 #include <pio/pio_it.h>
 #include <tc/tc.h>
 #include <utility/trace.h>
@@ -46,6 +47,7 @@
 
 
 
+volatile bool dma_spi_trans_done   = false ;
 
 static const Pin spi_pins[]     = { PINS_SPI0, PIN_SPI0_NPCS0 } ;
 static const Pin spi_pins_dis[] = { PINS_SPI0_DIS, PIN_SPI0_NPCS0_DIS } ;
@@ -194,9 +196,9 @@ unsigned char SPI_WriteBuffer(AT91S_SPI *spi,
     unsigned char* startDestAddr;
     startSourceAddr = (unsigned char*)(buffer);
     startDestAddr   = (unsigned char*)(&spi->SPI_TDR);
-       
+    
     // Clear any pending interrupts
-    DMA_GetStatus();
+    //DMA_GetStatus(); //affect SSC DMA ??
    
     AT91C_BASE_HDMA->HDMA_CH[BOARD_SPI_OUT_DMA_CHANNEL].HDMA_SADDR = (unsigned int)startSourceAddr; 
     AT91C_BASE_HDMA->HDMA_CH[BOARD_SPI_OUT_DMA_CHANNEL].HDMA_DADDR = (unsigned int)startDestAddr;
@@ -223,7 +225,7 @@ unsigned char SPI_WriteBuffer(AT91S_SPI *spi,
                                         | AT91C_HDMA_FIFOCFG_LARGESTBURST);        
     
  
-    
+    DMA_EnableIt( 1 << (BOARD_SPI_OUT_DMA_CHANNEL + 0)  );
     DMA_EnableChannel(BOARD_SPI_OUT_DMA_CHANNEL);
     
     return 1;
@@ -329,7 +331,7 @@ unsigned char SPI_ReadBuffer( AT91S_SPI *spi,
     startDestAddr   = (unsigned char*)(&spi->SPI_TDR);
        
     // Clear any pending interrupts
-    DMA_GetStatus();
+    //DMA_GetStatus();  //affect SSC DMA ??
    
     AT91C_BASE_HDMA->HDMA_CH[BOARD_SPI_OUT_DMA_CHANNEL].HDMA_SADDR = (unsigned int)startSourceAddr; 
     AT91C_BASE_HDMA->HDMA_CH[BOARD_SPI_OUT_DMA_CHANNEL].HDMA_DADDR = (unsigned int)startDestAddr;
@@ -386,7 +388,7 @@ unsigned char SPI_ReadBuffer( AT91S_SPI *spi,
                                         | AT91C_HDMA_SOD_ENABLE \
                                         | AT91C_HDMA_FIFOCFG_LARGESTBURST); 
     
-
+    DMA_EnableIt( 1 << (BOARD_SPI_OUT_DMA_CHANNEL + 0)  );
     DMA_EnableChannel(BOARD_SPI_IN_DMA_CHANNEL);
     DMA_EnableChannel(BOARD_SPI_OUT_DMA_CHANNEL);
     
@@ -416,30 +418,34 @@ unsigned char SPI_WriteBuffer_API(  void *buffer,  unsigned int length )
         //GPIOPIN_Set_Fast(7,0);
         state = SPI_WriteBuffer( spi_if, buffer, length ); 
         if( state == 1 ) {
-            //while( ! SPI_IsWriteFinished( spi_if ) ) {  
-            while( !((AT91C_BASE_HDMA->HDMA_EBCISR) & (DMA_BTC<<BOARD_SPI_OUT_DMA_CHANNEL) ) ) {
-                //AT91C_BASE_HDMA->HDMA_CHSR
-                if( couter_ms >  0 ) {
-                    delay_ms(1);  
-                    if( couter_ms++ > SPI_TIME_OUT ) { //timeout : 2s
-                        err = 2 ;
-                        break;
-                    }
-                } else {  
-                  delay_us(5);
-                  if( couter_us++ > 200 ) {
-                      couter_ms = 1 ;
-                  }
-                } 
-            }
-        } else {
-            err = 1;
+            while( !dma_spi_trans_done ); 
+            dma_spi_trans_done = false;                
             
+//            //while( ! SPI_IsWriteFinished( spi_if ) ) {  
+//            while( !((AT91C_BASE_HDMA->HDMA_EBCISR) & (DMA_BTC<<BOARD_SPI_OUT_DMA_CHANNEL) ) ) {
+//                //AT91C_BASE_HDMA->HDMA_CHSR
+//                if( couter_ms >  0 ) {
+//                    delay_us(1000);  
+//                    if( couter_ms++ > SPI_TIME_OUT ) { //timeout : 2s
+//                        err = 2 ;
+//                        break;
+//                    }
+//                } else {  
+//                  delay_us(5);
+//                  if( couter_us++ > 200 ) {
+//                      couter_ms = 1 ;
+//                  }
+//                } 
+//            }
+//        } else {
+//            err = 1;
+//            
         }    
         //GPIOPIN_Set_Fast(7,1);
         //delay_us(50);
         while( !( spi_if->SPI_SR & AT91C_SPI_TXEMPTY ) );
         
+        DMA_DisableIt( 1 << (BOARD_SPI_OUT_DMA_CHANNEL + 0)  );
         DMA_DisableChannel( BOARD_SPI_OUT_DMA_CHANNEL );
         //OSSemPost( SPI_Sem ); 
         //APP_TRACE_INFO(("\r\nstate:0x%d, couter: %d ",state,couter));
@@ -470,7 +476,7 @@ unsigned char SPI_ReadBuffer_API(  void *buffer,  unsigned int length )
             //while( ! SPI_IsReadFinished( spi_if ) ) {
             while( !((AT91C_BASE_HDMA->HDMA_EBCISR) & (DMA_BTC<<BOARD_SPI_OUT_DMA_CHANNEL) ) ) {      
                 if( couter_ms >  0 ) {
-                    delay_ms(1);  
+                    delay_us(1000);  
                     if( couter_ms++ > SPI_TIME_OUT ) { //timeout : 2s
                         err = 2 ;
                         break;
@@ -505,35 +511,39 @@ unsigned char SPI_WriteReadBuffer_API(  void *buffer_r,  void *buffer_w, unsigne
     unsigned int  couter_us  = 0 ; 
    
     //GPIOPIN_Set_Fast(7,0);
-      
+     
     if( length_w != 0 ) {
         if( length_r != 0 ) {
             Set_AT91C_SPI_CSAAT( spi_if, 0 );
         }
         state = SPI_WriteBuffer( spi_if, buffer_w, length_w ); 
-        if( state == 1 ) {               
-            while( !((AT91C_BASE_HDMA->HDMA_EBCISR) & (DMA_BTC<<BOARD_SPI_OUT_DMA_CHANNEL) ) ) {
-                if( couter_ms >  0 ) {
-                    delay_ms(1);//OSTimeDly(1);  
-                    if( couter_ms++ > SPI_TIME_OUT ) { //timeout : 2s
-                        err = 2 ;
-                        break;
-                    }
-                } else {  
-                  delay_us(5);
-                  if( couter_us++ > 200 ) {
-                      couter_ms = 1 ;
-                  }
-                } 
-            }
-            
-        } else {
-            err = 1;
-            
+        if( state == 1 ) { 
+            while( !dma_spi_trans_done ); 
+            dma_spi_trans_done = false; 
+//            while( !((AT91C_BASE_HDMA->HDMA_EBCISR) & (DMA_BTC<<BOARD_SPI_OUT_DMA_CHANNEL) ) ) {
+//                if( couter_ms >  0 ) {
+//                    delay_us(1000);//OSTimeDly(1);  
+//                    if( couter_ms++ > SPI_TIME_OUT ) { //timeout : 2s
+//                        err = 2 ;
+//                        break;
+//                    }
+//                } else {  
+//                  delay_us(5);
+//                  if( couter_us++ > 200 ) {
+//                      couter_ms = 1 ;
+//                  }
+//                } 
+//            }
+//            
+//        } else {
+//            err = 1;
+//            
         }
         //GPIOPIN_Set_Fast(7,1);
         //delay_us(50);
         while( !( spi_if->SPI_SR & AT91C_SPI_TXEMPTY ) );
+        
+        DMA_DisableIt( 1 << (BOARD_SPI_OUT_DMA_CHANNEL + 0)  );
         DMA_DisableChannel( BOARD_SPI_OUT_DMA_CHANNEL );    
         if( length_r != 0 ) {
             Clear_AT91C_SPI_CSAAT( spi_if, 0 ); 
@@ -553,28 +563,32 @@ unsigned char SPI_WriteReadBuffer_API(  void *buffer_r,  void *buffer_w, unsigne
        
         state = SPI_ReadBuffer( spi_if, buffer_r, length_r );
          
-        if( state == 1 ) {
+        if( state == 1 ) {            
+            while( !dma_spi_trans_done ); 
+            dma_spi_trans_done = false; 
             //while( ! SPI_IsReadFinished( spi_if ) ) {
-            while( !((AT91C_BASE_HDMA->HDMA_EBCISR) & (DMA_BTC<<BOARD_SPI_IN_DMA_CHANNEL) ) ) {      
-                if( couter_ms > 0 ) {
-                    delay_ms(1);//OSTimeDly(1);  
-                    if( couter_ms++ > SPI_TIME_OUT ) { //timeout : 2s
-                        err = 2 ;
-                        break;
-                    }
-                } else {  
-                  delay_us(5);
-                  if( couter_us++ > 200 ) {
-                      couter_ms = 1 ;
-                  }
-                }           
-            }             
+//            while( !((AT91C_BASE_HDMA->HDMA_EBCISR) & (DMA_BTC<<BOARD_SPI_IN_DMA_CHANNEL) ) ) {      
+//                if( couter_ms > 0 ) {
+//                    delay_us(1000);//OSTimeDly(1);  
+//                    if( couter_ms++ > SPI_TIME_OUT ) { //timeout : 2s
+//                        err = 2 ;
+//                        break;
+//                    }
+//                } else {  
+//                  delay_us(5);
+//                  if( couter_us++ > 200 ) {
+//                      couter_ms = 1 ;
+//                  }
+//                }           
+//            }             
         } else {        
             err = 1;
         }   
         //GPIOPIN_Set_Fast(7,1);
         //delay_us(50);
         while( !( spi_if->SPI_SR & AT91C_SPI_TXEMPTY ) );
+        DMA_DisableIt( 1 << (BOARD_SPI_OUT_DMA_CHANNEL + 0)  );
+            
         DMA_DisableChannel( BOARD_SPI_OUT_DMA_CHANNEL );
         DMA_DisableChannel( BOARD_SPI_IN_DMA_CHANNEL );
     }
