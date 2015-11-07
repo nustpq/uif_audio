@@ -379,8 +379,19 @@ void PIO_EnableIt(const Pin *pPin)
     pPin->pio->PIO_ISR;
     pPin->pio->PIO_IER = pPin->mask;
     
-
-#if defined(AT91C_PIOA_AIMMR)
+    const Pin pinPullUp = PIN_USB_VBUS;
+    if( (pPin->id == pinPullUp.id) && (pPin->mask == pinPullUp.mask)) { //if USB detect interruption, need both edge interruption
+        return;
+    }
+    
+    pPin->pio->PIO_AIMER = pPin->mask; //enabke edge
+    pPin->pio->PIO_IER = pPin->mask; //enable int
+    pPin->pio->PIO_ESR = pPin->mask; //edge int
+    pPin->pio->PIO_REHLSR = pPin->mask;//rising edge int
+    pPin->pio->PIO_IFER = pPin->mask;//enable input glitch filter
+    
+#if(0)// defined(AT91C_PIOA_AIMMR)
+  
     //PIO3 with additional interrupt support
     //configure additional interrupt mode registers
     if(pPin->mask&pPin->itMode.itMask) {

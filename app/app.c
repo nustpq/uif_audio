@@ -16,7 +16,7 @@
 *
 *                                          APP PACKAGE
 *
-*                                         Atmel  SAM3U4C
+*                                         Atmel  AT91SAM3U4C
 *                                               on the
 *                                      Unified EVM Interface Board
 *
@@ -51,7 +51,7 @@
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
-char fw_version[] = "[FW:A:V2.432]";
+char fw_version[] = "[FW:A:V2.433]";
 ////////////////////////////////////////////////////////////////////////////////
 
 //Buffer Level 1:  USB data stream buffer : 64 B

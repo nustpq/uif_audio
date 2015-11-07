@@ -84,7 +84,7 @@ int main( void )
         Audio_State_Control();
         DBGUART_Service();
         Init_USB_Callback();
-        Read_iM501_Voice_Buffer();
+        Service_To_iM501_IRQ();
       
     }
     

@@ -16,12 +16,12 @@
 *
 *                                        iM501 Communication Related
 *
-*                                          Atmel AT91SAM7A3
+*                                          Atmel AT91SAM3U4C
 *                                               on the
 *                                      Unified EVM Interface Board
 *
 * Filename      : im501_comm.c
-* Version       : V1.0.0
+* Version       : V2.0.0
 * Programmer(s) : PQ
 *********************************************************************************************************
 * Note(s)       :
@@ -30,6 +30,7 @@
 
 #include <stdbool.h>
 #include <intrinsics.h>
+#include <utility/trace.h>
 #include <tc/tc.h>
 #include <pio/pio.h>
 #include "im501_comm.h"
@@ -42,12 +43,23 @@ VOICE_BUF  voice_buf_data;
 unsigned char SPI_FIFO_Buffer[ SPI_FIFO_SIZE ] ;
 unsigned char SPI_Data_Buffer[ SPI_BUF_SIZE +1 ];  //+1 fix spi bug
 unsigned char SPI_Data_Buffer2[ SPI_BUF_SIZE ]; 
-unsigned int im501_irq_counter;
-
-unsigned int global_rec_spi_en = 0 ;
-unsigned char global_rec_spi_fast = 0; //true: fast read, false: real time rec
+unsigned char im501_irq_counter;
+unsigned int  global_rec_spi_en = 0 ;
 
 
+/*
+*********************************************************************************************************
+*                                           Init_SPI_FIFO()
+*
+* Description :  Init kfifo for SPI recording.
+*
+* Argument(s) :  None.
+*
+* Return(s)   :  error number.           
+*
+* Note(s)     :  None.
+*********************************************************************************************************
+*/
 void Init_SPI_FIFO( void )
 {   
     kfifo_t *pfifo;
@@ -152,8 +164,6 @@ unsigned char im501_read_reg_spi( unsigned char reg_addr, unsigned char *pdata )
 }
 
 
-
-
 /*
 *********************************************************************************************************
 *                                           im501_write_reg_i2c()
@@ -192,6 +202,8 @@ unsigned char im501_write_reg_i2c( unsigned char reg_addr, unsigned char data )
     return err;
     
 }
+
+
 /*
 *********************************************************************************************************
 *                                           im501_write_reg_spi()
@@ -228,7 +240,6 @@ unsigned char im501_write_reg_spi( unsigned char reg_addr, unsigned char data )
 }
 
 
-
 /*
 *********************************************************************************************************
 *                                           im501_read_dram_i2c()
@@ -254,6 +265,7 @@ unsigned char im501_read_dram_i2c( unsigned int mem_addr, unsigned char *pdata )
     buf[1] =  mem_addr & 0xFF;
     buf[2] =  (mem_addr>>8) & 0xFF;
     buf[3] =  (mem_addr>>16) & 0xFF;
+    
     state  =  TWID_Write( iM501_I2C_ADDR>>1,
                          0, 
                          0, 
@@ -263,7 +275,7 @@ unsigned char im501_read_dram_i2c( unsigned int mem_addr, unsigned char *pdata )
     if (state != SUCCESS) {
         err = I2C_BUS_ERR;
         return err;
-    }   
+    }      
     err = im501_read_reg_i2c(0x0A, pdata);
     if( err != NO_ERR ) {
         return err;
@@ -284,6 +296,7 @@ unsigned char im501_read_dram_i2c( unsigned int mem_addr, unsigned char *pdata )
     return err;
     
 }
+
 
 /*
 *********************************************************************************************************
@@ -485,9 +498,11 @@ unsigned char im501_write_dram_spi( unsigned int mem_addr, unsigned char *pdata 
 *
 * Description :  change iM501 actived interface type 
 *
-* Argument(s) :  if_type     is for indicating which interface will be actived, SPI(if_type = 2) or  I2C(if_type = 1)
+* Argument(s) :  if_type     is for indicating which interface will be actived :
+*                            I2C : if_type = 1
+*                            SPI : if_type = 2
 *
-*                spi_mode    is for indicating  SPI format( 0~3 )
+*                spi_mode    is for indicating SPI format( 0~3 ), used only when if_type=2
 *
 * Return(s)   :  error number.           
 *
@@ -503,7 +518,7 @@ unsigned char im501_switch_i2c_spi( unsigned char if_type, unsigned char spi_mod
     if( err != 0 ) {
         return err;
     }
-    if(( data & 0x04 ) && (if_type == 1) ) { // I2C mode, need switch to SPI
+    if(( data & 0x04 ) && (if_type == 2) ) { // I2C mode, need switch to SPI
         err = im501_write_reg_spi(iM501_I2C_SPI_REG, 0x80+(spi_mode&0x03));
         if( err != 0 ) {
             return err;
@@ -512,7 +527,7 @@ unsigned char im501_switch_i2c_spi( unsigned char if_type, unsigned char spi_mod
         if( err != 0 ) {
             return err;
         }
-    } else if( (!(data & 0x04 )) && (if_type == 2) ) { // SPI mode, need switch to I2C
+    } else if( (!(data & 0x04 )) && (if_type == 1) ) { // SPI mode, need switch to I2C
         err = im501_write_reg_i2c(iM501_I2C_SPI_REG, 0x04);
         if( err != 0 ) {
             return err;
@@ -524,16 +539,34 @@ unsigned char im501_switch_i2c_spi( unsigned char if_type, unsigned char spi_mod
 }
 
 
+/*
+*********************************************************************************************************
+*                                           fetch_voice_data()
+*
+* Description :  read voice data from iM501 DRAM via SPI 
+*
+* Argument(s) :  start_addr     is DRAM data address
+*
+*                data_length    is data size(bytes) to read
+*
+* Return(s)   :  error number.           
+*
+* Note(s)     :  
+*********************************************************************************************************
+*/
 unsigned char fetch_voice_data( unsigned int start_addr, unsigned int data_length )
 {
     unsigned char err;
     unsigned char *pbuf;
     unsigned int  i,a,b;
+    
+#if( 0 )   /////////debug    
     unsigned int  test;
+    test = 0;
+#endif
     
     a = data_length / SPI_BUF_SIZE ;
-    b = data_length % SPI_BUF_SIZE ;
-    test = 0;
+    b = data_length % SPI_BUF_SIZE ;    
     
     for( i=0; i<a; i++ ) {   
         err = im501_burst_read_dram_spi( start_addr,  &pbuf,  SPI_BUF_SIZE ); 
@@ -571,6 +604,19 @@ unsigned char fetch_voice_data( unsigned int start_addr, unsigned int data_lengt
 }
 
 
+/*
+*********************************************************************************************************
+*                                           parse_to_host_command()
+*
+* Description :  parse cmd from iM501 
+*
+* Argument(s) :  cmd     is To_Host_CMD type data
+*
+* Return(s)   :  error number.           
+*
+* Note(s)     :  
+*********************************************************************************************************
+*/
 unsigned char parse_to_host_command( To_Host_CMD cmd )
 {
     unsigned char err; 
@@ -578,32 +624,24 @@ unsigned char parse_to_host_command( To_Host_CMD cmd )
        
     switch( cmd.cmd_byte ) {
         
-        case 0x40 : //Infom host Keywords detected
-              //this is implemeted in HOST MCU 
+        case TO_HOST_CMD_KEYWORD_DET : //Info host Keywords detected
+              //this is implemeted in HOST MCU only
         break;
         
-        case 0x41 : //Reuest host to read To-Host Buffer-Fast
-            printf("\r\n---Get 0x41 CMD--\r\n");
-            voice_buf_data.length   = (cmd.attri & 0xFFFF ) << 1;  //sample to bytes
-            address = HW_VOICE_BUF_START;
-            global_rec_spi_fast = 1;
-            err = fetch_voice_data( address, voice_buf_data.length ); 
+        case TO_HOST_CMD_DATA_BUF_RDY : //Reuest host to read To-Host Buffer-Fast         
+            voice_buf_data.index   = (cmd.attri >>8) & 0xFFFF;  //package index
+            printf("Pack No.[%5d], Bank[%0X]\r\n",voice_buf_data.index, cmd.attri & 0xFF );            
+            if( (cmd.attri & 0xFF) == 0xF0 ) {  
+               address = HW_VOICE_BUF_START; //BANK0 address 
+            } else {
+               address = HW_VOICE_BUF_START + HW_VOICE_BUF_BANK_SIZE ; //BANK1 address
+            }
+            err = fetch_voice_data( address, HW_VOICE_BUF_BANK_SIZE ); 
             if( err != NO_ERR ){
                 return err;
             }            
         break;
         
-        case 0x42 : //Reuest host to read To-Host Buffer-RealTime    
-            //printf("\r\n---Get 0x42 CMD--\r\n");        
-            voice_buf_data.length   = ( (cmd.attri & 0xFF0000 )>>16 ) << 1;  //sample to bytes
-            address = HW_VOICE_BUF_START + (cmd.attri & 0xFFFF);
-            global_rec_spi_fast = 0;  
-            err = fetch_voice_data( address,  voice_buf_data.length );
-            if( err != NO_ERR ){ 
-                return err;
-            }
-        break;
-                       
         default:
             err = 2;           
         break;
@@ -615,7 +653,19 @@ unsigned char parse_to_host_command( To_Host_CMD cmd )
 }
 
 
-
+/*
+*********************************************************************************************************
+*                                           send_to_dsp_command()
+*
+* Description :  parse cmd from iM501 
+*
+* Argument(s) :  cmd     is To_501_CMD type data
+*
+* Return(s)   :  error number.           
+*
+* Note(s)     :  
+*********************************************************************************************************
+*/
 unsigned char send_to_dsp_command( To_501_CMD cmd )
 {
     unsigned char err;
@@ -648,44 +698,20 @@ unsigned char send_to_dsp_command( To_501_CMD cmd )
 }
 
 
-
-unsigned char resp_to_host_command( void )
-{
-    unsigned char err;
-    To_Host_CMD   cmd;
-      
-    err = im501_read_dram_spi( TO_HOST_CMD_ADDR, (unsigned char *)&cmd );
-    if( err != 0 ){
-        return err;
-    }
-   
-    err = parse_to_host_command( cmd );
-    if( err != 0 ){ 
-        return err;
-    }
-    
-    cmd.status = 0;
-    err = im501_write_dram_spi( TO_HOST_CMD_ADDR, (unsigned char *)&cmd );
-    if( err != 0 ){ 
-        return err;
-    }
-
-    
-    return err;
-    
-}
-
-
-
-void ISR_iM501_IRQ( const Pin *pPin )
-{
-   // if( Check_GPIO_Intrrupt( Voice_Buf_Cfg.gpio_irq ) ) {                       
-        im501_irq_counter++;        
-   // }
-}
-
-
-
+/*
+*********************************************************************************************************
+*                                    Write_CMD_To_iM501()
+*
+* Description :  Send command data to iM501 
+*
+* Argument(s) :  cmd_index : command index number
+*                para      : parameters
+* 
+* Return(s)   :  Error number.
+*
+* Note(s)     :  None.
+*********************************************************************************************************
+*/
 unsigned char Write_CMD_To_iM501( unsigned char cmd_index, unsigned short para )
 {
     
@@ -702,7 +728,19 @@ unsigned char Write_CMD_To_iM501( unsigned char cmd_index, unsigned short para )
 }
 
 
-
+/*
+*********************************************************************************************************
+*                                    Request_Start_Voice_Buf_Trans()
+*
+* Description :  Send command(0x19) to iM501 to request voice buf data fetch 
+*
+* Argument(s) :  None.
+*
+* Return(s)   :  Error number.
+*
+* Note(s)     :  None.
+*********************************************************************************************************
+*/
 unsigned char Request_Start_Voice_Buf_Trans( void )
 {
     
@@ -714,6 +752,20 @@ unsigned char Request_Start_Voice_Buf_Trans( void )
     
 }
 
+
+/*
+*********************************************************************************************************
+*                                    Request_Stop_Voice_Buf_Trans()
+*
+* Description :  Send command(0x1D) to iM501 to stop voice buf data fetch 
+*
+* Argument(s) :  None.
+*
+* Return(s)   :  error number.
+*
+* Note(s)     :  None.
+*********************************************************************************************************
+*/
 unsigned char Request_Stop_Voice_Buf_Trans( void )
 {
     
@@ -725,6 +777,20 @@ unsigned char Request_Stop_Voice_Buf_Trans( void )
     
 }
 
+
+/*
+*********************************************************************************************************
+*                                    Request_Enter_PSM()
+*
+* Description :  Send command(0x0D) to iM501 to prepare for entering power saving mode 
+*
+* Argument(s) :  None.
+*
+* Return(s)   :  error number.
+*
+* Note(s)     :  None.
+*********************************************************************************************************
+*/
 unsigned char Request_Enter_PSM( void )
 {
     
@@ -736,32 +802,82 @@ unsigned char Request_Enter_PSM( void )
     
 }
 
-void Read_iM501_Voice_Buffer( void )
+
+/*
+*********************************************************************************************************
+*                                    Service_To_iM501_IRQ()
+*
+* Description :  Service to iM501 IRQ interruption 
+*                Should be in Main Loop, inquiring the IRQ signal by checking im501_irq_counter
+*
+* Argument(s) :  None.
+*
+* Return(s)   :  None.
+*
+* Note(s)     : None.
+*********************************************************************************************************
+*/
+void Service_To_iM501_IRQ( void )
 {  
     
     unsigned char err;
-      
+    To_Host_CMD   cmd;
+    
     if( global_rec_spi_en == 0 ) {
         return;
     }
     
-                 
+#if( 0 ) //debug     
     global_rec_spi_fast = 1;
-    fetch_voice_data( HW_VOICE_BUF_START, 32768); 
-           
-     
-//    if ( im501_irq_counter ) { 
-//        im501_irq_counter--;
-//        //APP_TRACE_INFO(("::ISR_iM501_IRQ : %d\r\n",im501_irq_counter));   //for test       
-//        err = resp_to_host_command( );            
-//        if( err != NO_ERR ){ 
-//            return ;
-//        }           
-//            
-//    }
+    fetch_voice_data( HW_VOICE_BUF_START, 32768);            
+#else   
     
+    if ( im501_irq_counter ) {
+        
+        im501_irq_counter--; //
+        //APP_TRACE_INFO(("::ISR_iM501_IRQ : %d\r\n",im501_irq_counter));   //for test 
+          
+        err = im501_read_dram_spi( TO_HOST_CMD_ADDR, (unsigned char *)&cmd );
+        if( err != 0 ){
+            return ;
+        }
+       
+        err = parse_to_host_command( cmd );
+        if( err != 0 ){ 
+            return ;
+        }
+        
+        cmd.status = 0;
+        err = im501_write_dram_spi( TO_HOST_CMD_ADDR, (unsigned char *)&cmd );
+        if( err != 0 ){ 
+            return ;
+        }           
+    }       
+   
+#endif   
     
 }
+
+                          
+/*
+*********************************************************************************************************
+*                                           ISR_iM501_IRQ()
+*
+* Description :  Interruption service routine for iM501 IRQ
+*
+* Argument(s) :  pPin     : useless
+*
+* Return(s)   :  None.           
+*
+* Note(s)     :  The ISR register is read in PioInterruptHandler().
+*********************************************************************************************************
+*/
+void ISR_iM501_IRQ( const Pin *pPin )
+{
+   im501_irq_counter++;        
+   
+}
+
 
 
 

@@ -16,7 +16,7 @@
 *
 *                                          APP PACKAGE
 *
-*                                         Atmel  SAM3U4C
+*                                         Atmel  AT91SAM3U4C
 *                                             on the
 *                                      Unified EVM Interface Board
 *

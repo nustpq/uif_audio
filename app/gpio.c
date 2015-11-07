@@ -222,6 +222,7 @@ void Config_GPIO_Interrupt0( unsigned char gpio_index, CPU_FNCT_VOID isr_handler
     per_id = (unsigned char)pinsGpios[gpio_index].id;
     IRQ_DisableIT( per_id );
     pinsGpios[gpio_index].pio->PIO_ISR;
+    pinsGpios[gpio_index].pio->PIO_AIMER = pinsGpios[gpio_index].mask;
     pinsGpios[gpio_index].pio->PIO_IER = pinsGpios[gpio_index].mask; //enable int
     pinsGpios[gpio_index].pio->PIO_ESR = pinsGpios[gpio_index].mask; //edge int
     pinsGpios[gpio_index].pio->PIO_REHLSR = pinsGpios[gpio_index].mask;//rising edge int
@@ -238,24 +239,6 @@ void Config_GPIO_Interrupt( unsigned char gpio_index, void (*isr_handler)(const 
     PIO_ConfigureIt(&pinsGpios[gpio_index], isr_handler);
     PIO_EnableIt(&pinsGpios[gpio_index]);
     
-}
-
-
-
-unsigned char Check_GPIO_Intrrupt( unsigned char gpio_index )
-{   
-    unsigned int state = pinsGpios[gpio_index].pio->PIO_ISR;
-    
-    //discard falling edge interruption, because it seems PIO interrupt edge sellection not work
-    if ( (pinsGpios[gpio_index].pio->PIO_PDSR & pinsGpios[gpio_index].mask) == 0) { 
-        return 0; 
-    }
-    
-    if(  state & pinsGpios[gpio_index].mask ) {
-        return 1;
-    } else {
-        return 0;
-    }
 }
 
 void Disable_GPIO_Interrupt( unsigned char gpio_index )
