@@ -85,7 +85,11 @@ typedef struct {
   unsigned char  gpio_rec_num;
   unsigned char  gpio_rec_start_index;
   unsigned char  gpio_rec_bit_mask;
-  
+  unsigned char  sample_format;
+  unsigned char  sample_cki;
+  unsigned char  sample_delay;
+  unsigned char  sample_start;
+  unsigned char  master_slave; //not used
 }AUDIO_CFG;
 
 

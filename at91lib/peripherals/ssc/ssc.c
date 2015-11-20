@@ -642,7 +642,7 @@ unsigned char SSC_ReadBuffer(  AT91S_SSC *ssc,
 //    
 //}
 
-void SSC_Channel_Set_Tx( unsigned char tx_ch_num, unsigned char slot_len )
+void SSC_Channel_Set_Tx( unsigned char tx_ch_num, unsigned char slot_len, unsigned char cki, unsigned char delay, unsigned char start )
 {       
     
     if( slot_len == 16 ) {
@@ -656,6 +656,9 @@ void SSC_Channel_Set_Tx( unsigned char tx_ch_num, unsigned char slot_len )
     if( tx_ch_num > 0 ) {        
         tfmr.datnb  = tx_ch_num - 1 ; //5 ; //6 slot TDM
         tfmr.datlen = slot_len-1;//31 ; //32bits
+        tcmr.cki=cki;
+        tcmr.sttdly=delay;
+        tcmr.start=start;
         SSC_ConfigureTransmitter( BOARD_AT73C213_SSC,  tcmr.value,  tfmr.value   );
         
     }       
@@ -663,7 +666,7 @@ void SSC_Channel_Set_Tx( unsigned char tx_ch_num, unsigned char slot_len )
 }
 
 
-void SSC_Channel_Set_Rx( unsigned char rx_ch_num, unsigned char slot_len )
+void SSC_Channel_Set_Rx( unsigned char rx_ch_num, unsigned char slot_len, unsigned char cki, unsigned char delay, unsigned char start )
 {     
    
     if( slot_len == 16 ) {
@@ -678,6 +681,9 @@ void SSC_Channel_Set_Rx( unsigned char rx_ch_num, unsigned char slot_len )
         
         rfmr.datnb  = rx_ch_num - 1 ; //5 ; 
         rfmr.datlen = slot_len-1;//31 ;
+        rcmr.cki=cki;
+        rcmr.sttdly=delay;
+        rcmr.start=start;
         SSC_ConfigureReceiver(  BOARD_AT73C213_SSC,  rcmr.value , rfmr.value   );
         
     }

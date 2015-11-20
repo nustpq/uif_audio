@@ -51,7 +51,7 @@
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
-char fw_version[] = "[FW:A:V2.433]";
+char fw_version[] = "[FW:A:V2.44]";
 ////////////////////////////////////////////////////////////////////////////////
 
 //Buffer Level 1:  USB data stream buffer : 64 B
@@ -220,9 +220,20 @@ void __ramfunc Merge_GPIO_Data( unsigned short *pdata )
 }
 
 
-//in test, try to merge SPI mono data to the override the last channel data
-//return the final data size
-//
+/*
+*********************************************************************************************************
+*                                    Merge_SPI_Data()
+*
+* Description : merge SPI mono data in spi_rec_fifo to the override the last channel data
+*
+* Argument(s) : *pdata     -  pointer to buffer that need merge SPI data into
+*                free_size -  the free size of this buffer
+*
+* Return(s)   : data_size  - actual size of final data that fillup the buffer
+*
+* Note(s)     : None.
+*********************************************************************************************************
+*/
 unsigned int Merge_SPI_Data( unsigned short *pdata, unsigned int free_size )
 {
     unsigned int    i;
@@ -285,14 +296,17 @@ unsigned int Merge_SPI_Data( unsigned short *pdata, unsigned int free_size )
     return data_size;       
 }
 
+
 /*
 *********************************************************************************************************
 *                                  First_Pack_Check_BO()
 *
 * Description :  Check if first USB bulk out package is same as padding data.
+*
 * Argument(s) :  None.
-* Return(s)   :  true -- check ok.
-*                false -- check failed.
+*
+*Return(s)   :   true  - check ok.
+*                false - check failed.
 *
 * Note(s)     :  None.
 *********************************************************************************************************
@@ -314,12 +328,15 @@ __ramfunc bool First_Pack_Check_BO( unsigned int size )
 
 }
 
+
 /*
 *********************************************************************************************************
 *                                First_Pack_Padding_BI()
 *
 * Description :  Padding the first USB bulk in package.
+*
 * Argument(s) :  None.
+*
 * Return(s)   :  None.
 *
 * Note(s)     :  Must be called after reset FIFO and before start audio.
@@ -338,7 +355,9 @@ static void First_Pack_Padding_BI( void )
 *                                    Init_Play_Setting()
 *
 * Description :  Initialize USB bulk out (play) settings.
+*
 * Argument(s) :  None.
+*
 * Return(s)   :  None.
 *
 * Note(s)     : None.
@@ -350,13 +369,19 @@ static unsigned char Init_Play_Setting( void )
     unsigned short sample_rate ; //not support 44.1khz now
     unsigned char  channels_play;
     unsigned char  bit_length;
-    
+    unsigned char  cki;
+    unsigned char  delay;
+    unsigned char  start;
     
     err  = NULL;
     channels_play = Audio_Configure[1].channel_num ; 
     sample_rate   = Audio_Configure[1].sample_rate ;
     bit_length    = Audio_Configure[1].bit_length ; 
-    printf( "\r\nStart [%dth]Play[%dCH - %dHz - %dBit] ...\r\n",counter_play++,channels_play,sample_rate,bit_length);  
+    cki           = Audio_Configure[1].sample_cki;
+    delay         = Audio_Configure[1].sample_delay;
+    start         = Audio_Configure[1].sample_start;
+    printf( "\r\nStart [%dth]Play[%dCH - %dHz - %dBit][%d%s - %dDelay - %d%sLeft] ...\r\n",\
+             counter_play++,channels_play,sample_rate,bit_length,cki,(cki==0)?"Fall" :"Rise",delay,start,(start==4)?"Low":"High" );  
     
     if( (channels_play == 0) ||  (channels_play > 8) ) {        
         err = ERR_TDM_FORMAT ; 
@@ -374,7 +399,7 @@ static unsigned char Init_Play_Setting( void )
     } else { //32
         i2s_play_buffer_size = sample_rate / 1000 * channels_play * 2 * 4;        
     }
-    SSC_Channel_Set_Tx( channels_play, bit_length );  
+    SSC_Channel_Set_Tx( channels_play, bit_length, cki, delay, start );   
     
     return err;
 }
@@ -385,7 +410,9 @@ static unsigned char Init_Play_Setting( void )
 *                                    Init_Rec_Setting()
 *
 * Description :  Initialize USB bulk in (record) settings.
+*
 * Argument(s) :  None.
+*
 * Return(s)   :  None.
 *
 * Note(s)     : None.
@@ -397,11 +424,17 @@ static unsigned char Init_Rec_Setting( void )
     unsigned short sample_rate ; //not support 44.1kHz now
     unsigned char  channels_rec;
     unsigned char  bit_length;
+    unsigned char  cki=0;
+    unsigned char  delay=0;
+    unsigned char  start=0;
     
     err  = NULL;    
     channels_rec = Audio_Configure[0].channel_num ;
     sample_rate  = Audio_Configure[0].sample_rate ;
     bit_length   = Audio_Configure[0].bit_length ;    
+    cki          = Audio_Configure[0].sample_cki;
+    delay        = Audio_Configure[0].sample_delay;
+    start        = Audio_Configure[0].sample_start;
    
     global_rec_samples    =  sample_rate / 1000 * 2;    
     global_rec_num        =  Audio_Configure[0].channel_num ;
@@ -409,8 +442,8 @@ static unsigned char Init_Rec_Setting( void )
     global_rec_gpio_num   =  Audio_Configure[0].gpio_rec_num ;
     global_rec_gpio_index =  Audio_Configure[0].gpio_rec_start_index ;
     
-    printf( "\r\nStart [%dth]Rec [%dCH - %dHz - %dBit]...\r\n",counter_rec++,channels_rec,sample_rate,bit_length);     
-    
+    printf( "\r\nStart [%dth]Rec [%dCH - %dHz - %dBit][%d%s - %dDelay - %d%sLeft]...\r\n",\
+             counter_rec++,channels_rec,sample_rate,bit_length,cki,(cki==0)?"Fall" :"Rise",delay,start,(start==4)?"Low":"High" );     
     if( (channels_rec == 0) || (channels_rec > 8) ) {  
         err = ERR_TDM_FORMAT ; 
     }  
@@ -427,7 +460,7 @@ static unsigned char Init_Rec_Setting( void )
     } else { //32bit case
         i2s_rec_buffer_size  = sample_rate / 1000 * channels_rec  * 2 * 4; // 2ms * 32bit       
     }
-    SSC_Channel_Set_Rx( channels_rec, bit_length );
+    SSC_Channel_Set_Rx( channels_rec, bit_length, cki, delay, start);
           
     First_Pack_Padding_BI();    
     
@@ -440,7 +473,9 @@ static unsigned char Init_Rec_Setting( void )
 *                                    Audio_Start_Rec()
 *
 * Description :  Start USB data transfer for recording.
+*
 * Argument(s) :  None.
+*
 * Return(s)   :  None.
 *
 * Note(s)     : None.
@@ -473,7 +508,9 @@ static unsigned char Audio_Start_Rec( void )
 *                                    Audio_Start_Play()
 *
 * Description :  Start USB data transfer for playing.
+*
 * Argument(s) :  None.
+*
 * Return(s)   :  None.
 *
 * Note(s)     : None.
@@ -503,13 +540,14 @@ static unsigned char Audio_Start_Play( void )
 *                                    Audio_Stop()
 *
 * Description :  Stop USB data transfer.
+*
 * Argument(s) :  None.
+*
 * Return(s)   :  None.
 *
 * Note(s)     : None.
 *********************************************************************************************************
 */
-
 static void Audio_Stop( void )
 {  
     
@@ -601,41 +639,78 @@ static void Audio_Stop( void )
 
 }
 
+
+/*
+*********************************************************************************************************
+*                                    Rec_Voice_Buf_Start()
+*
+* Description :  Start SPI data recording procedure.
+*
+* Argument(s) :  None.
+*
+* Return(s)   :  None.
+*
+* Note(s)     : None.
+*********************************************************************************************************
+*/
 void Rec_Voice_Buf_Start( void )
 {
+    
     if( global_rec_spi_en == 0) {
+        
         im501_irq_counter = 0;
         Enable_SPI_Port(Voice_Buf_Cfg.spi_speed, Voice_Buf_Cfg.spi_mode);
         Config_GPIO_Interrupt( Voice_Buf_Cfg.gpio_irq, ISR_iM501_IRQ );
         Init_SPI_FIFO();
         global_rec_spi_en = 1;
         Request_Start_Voice_Buf_Trans();
+        
     }
     
 }
 
 
+/*
+*********************************************************************************************************
+*                                    Rec_Voice_Buf_Stop()
+*
+* Description :  Stop SPI data recordin.
+*
+* Argument(s) :  None.
+*
+* Return(s)   :  None.
+*
+* Note(s)     : None.
+*********************************************************************************************************
+*/
 void Rec_Voice_Buf_Stop( void )
 {
+    
     if( global_rec_spi_en == 1 ) {
+        
         Request_Stop_Voice_Buf_Trans();
         Disable_SPI_Port();
         Disable_GPIO_Interrupt( Voice_Buf_Cfg.gpio_irq );
         global_rec_spi_en = 0;
+        
     }
+    
 }
+
+
 /*
 *********************************************************************************************************
 *                                    Audio_State_Control()
 *
 * Description : Process command from Host MCU via UART.
+*
 * Argument(s) : None.
+*
 * Return(s)   : None.
 *
 * Note(s)     : None.
 *********************************************************************************************************
 */
-
 void Audio_State_Control( void )
 {    
     unsigned char err ;
@@ -761,18 +836,20 @@ void Audio_State_Control( void )
     
 }
 
+
 /*
 *********************************************************************************************************
 *                                    Debug_Info()
 *
 * Description : Print debug infomation via UART port.
+*
 * Argument(s) : None.
+*
 * Return(s)   : None.
 *
 * Note(s)     : None.
 *********************************************************************************************************
 */
-
 void Debug_Info( void )
 {
   
@@ -876,8 +953,22 @@ void Debug_Info( void )
 }
 
 
+/*
+*********************************************************************************************************
+*                                    Get_Run_Time()
+*
+* Description : Format ms tick to [day:hour:min:sec:0.sec], and print.
+*
+* Argument(s) : time  -  number of 100ms tick from Timer #2 , using global : second_counter .
+*
+* Return(s)   : None.
+*
+* Note(s)     : None.
+*********************************************************************************************************
+*/
 void Get_Run_Time( unsigned int time )
 {
+    
     unsigned char  msec, sec, min, hour;
     unsigned int   day;
 

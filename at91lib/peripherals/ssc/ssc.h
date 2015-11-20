@@ -148,8 +148,9 @@ extern unsigned char SSC_ReadBuffer_Start(  AT91S_SSC *ssc,
 extern void SSC_Init( unsigned int mclk, unsigned char slot_num, unsigned char slot_len );
 extern void SSC_Reset( void );
 //extern void SSC_Channel_Set(unsigned char tx_ch_num, unsigned char rx_ch_num );
-extern void SSC_Channel_Set_Rx( unsigned char rx_ch_num, unsigned char slot_len  );
-extern void SSC_Channel_Set_Tx( unsigned char tx_ch_num, unsigned char slot_len );
+extern void SSC_Channel_Set_Rx( unsigned char rx_ch_num, unsigned char slot_len ,unsigned char cki, unsigned char delay, unsigned char start );
+extern void SSC_Channel_Set_Tx( unsigned char tx_ch_num, unsigned char slot_len ,unsigned char cki, unsigned char delay, unsigned char start );
+
 
 
 typedef union __TCMR

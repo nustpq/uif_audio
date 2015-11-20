@@ -1,4 +1,4 @@
-/* ----------------------------------------------------------------------------
+ /* ----------------------------------------------------------------------------
  *         ATMEL Microcontroller Software Support 
  * ----------------------------------------------------------------------------
  * Copyright (c) 2008, Atmel Corporation
@@ -670,7 +670,9 @@ const unsigned char OSExPropertyDescriptor[] = {
     USBStringDescriptor_UNICODE('1'),
     USBStringDescriptor_UNICODE('3'),
     USBStringDescriptor_UNICODE('6'),
-    USBStringDescriptor_UNICODE('}')
+    USBStringDescriptor_UNICODE('}'),
+    0, //added 2 more 0 in case of the issue of messy code after GUID in registry: 
+    0 
     
 };
 
