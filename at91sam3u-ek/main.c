@@ -74,8 +74,7 @@ int main( void )
     USB_Init(); 
     Init_DMA();
     I2S_Init();
-
-    
+   
     
     while(1) {
       
@@ -84,7 +83,7 @@ int main( void )
         Audio_State_Control();
         DBGUART_Service();
         Init_USB_Callback();
-        Service_To_iM501_IRQ();
+        SPI_Rec_Service();
       
     }
     

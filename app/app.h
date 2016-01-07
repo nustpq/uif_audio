@@ -28,7 +28,7 @@
 
 #define PLAY_BUF_DLY_N                  5//  delay 5 * 2ms = 10 ms // 3072 * 5 = 15360 < 16384
 
-#define SPI_CLK                         1000000
+#define SPI_CLK                         (1000000*10)
 ////////////////////////////////////////////////////////////////////////////////
 #define UART_IN_BUFFER_SIZE             128   
 #define UART_OUT_BUFFER_SIZE            128   

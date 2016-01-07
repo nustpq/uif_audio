@@ -1927,13 +1927,13 @@
       <name>$PROJ_DIR$\..\..\app\app.c</name>
     </file>
     <file>
+      <name>$PROJ_DIR$\..\..\app\fm1388_comm.c</name>
+    </file>
+    <file>
       <name>$PROJ_DIR$\..\..\app\gpio.c</name>
     </file>
     <file>
       <name>$PROJ_DIR$\..\..\app\i2s.c</name>
-    </file>
-    <file>
-      <name>$PROJ_DIR$\..\..\app\im501_comm.c</name>
     </file>
     <file>
       <name>$PROJ_DIR$\..\..\app\kfifo.c</name>

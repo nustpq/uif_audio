@@ -40,7 +40,7 @@
 #include <usb/device/cdc-serial/CDCDSerialDriver.h>
 #include <usb/device/cdc-serial/CDCDSerialDriverDescriptors.h>
 #include <pmc/pmc.h>
-#include "im501_comm.h"
+#include "fm1388_comm.h"
 #include "kfifo.h"
 #include "usb.h"
 #include "app.h"
@@ -51,7 +51,7 @@
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
-char fw_version[] = "[FW:A:V2.44]";
+char fw_version[] = "[FW:A:V2.45]";
 ////////////////////////////////////////////////////////////////////////////////
 
 //Buffer Level 1:  USB data stream buffer : 64 B
@@ -143,15 +143,12 @@ static unsigned int BI_free_size_min      = 100;
 static unsigned int DBGUART_free_size_min = 100; 
 static unsigned int Stop_CMD_Miss_Counter = 0;
 
-
 static unsigned char global_rec_num               ;  //total TDM channels
 static unsigned char global_rec_samples           ;  //samples per package of one interruption 
 
 static unsigned char global_rec_gpio_mask         ; // gpio   to record 
 static unsigned char global_rec_gpio_num          ; //total gpio num to record
 static unsigned char global_rec_gpio_index        ;  //index gpio start at which TDM channel 
-
-
 
 unsigned int counter_play    = 0;
 unsigned int counter_rec     = 0;
@@ -660,10 +657,15 @@ void Rec_Voice_Buf_Start( void )
         
         im501_irq_counter = 0;
         Enable_SPI_Port(Voice_Buf_Cfg.spi_speed, Voice_Buf_Cfg.spi_mode);
-        Config_GPIO_Interrupt( Voice_Buf_Cfg.gpio_irq, ISR_iM501_IRQ );
+        //Config_GPIO_Interrupt( Voice_Buf_Cfg.gpio_irq, ISR_iM501_IRQ );
         Init_SPI_FIFO();
         global_rec_spi_en = 1;
-        Request_Start_Voice_Buf_Trans();
+        //Request_Start_Voice_Buf_Trans();
+        spi_rec_get_addr();
+        spi_rec_start_cmd(); 
+        
+        
+        
         
     }
     
@@ -688,7 +690,8 @@ void Rec_Voice_Buf_Stop( void )
     
     if( global_rec_spi_en == 1 ) {
         
-        Request_Stop_Voice_Buf_Trans();
+        //Request_Stop_Voice_Buf_Trans();
+        spi_rec_stop_cmd();
         Disable_SPI_Port();
         Disable_GPIO_Interrupt( Voice_Buf_Cfg.gpio_irq );
         global_rec_spi_en = 0;
@@ -813,11 +816,11 @@ void Audio_State_Control( void )
             break;  
             
             case AUDIO_CMD_READ_VOICE_BUF : 
-                if( Audio_Configure[0].channel_num != 1 ) { //make sure  no other channel recording while SPI recording
-                    err = ERR_AUD_CFG;
-                } else {
+//                if( Audio_Configure[0].channel_num != 1 ) { //make sure  no other channel recording while SPI recording
+//                    err = ERR_AUD_CFG;
+//                } else {
                     Rec_Voice_Buf_Start();
-                }
+//                }
             break;          
             
             default:         
