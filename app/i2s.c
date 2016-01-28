@@ -221,7 +221,9 @@ void HDMA_IrqHandler(void)
     unsigned int temp;
 
     status = DMA_GetMaskedStatus();   
-
+    
+////////////////////////////////////////////////////////////////////////////////
+    
     if( status & ( 1 << BOARD_SSC_IN_DMA_CHANNEL) ) { //record
     
         TRACE_INFO_NEW_WP("-SI-") ; 
@@ -233,7 +235,7 @@ void HDMA_IrqHandler(void)
             error_bulkin_full++; //bulkin fifo full        
         }
         if( error_bulkin_full ) {//force record data to fixed line to alert user record error...  
-             memset((unsigned char *)I2SBuffersIn[i2s_buffer_in_index],0x10,i2s_rec_buffer_size);  
+             memset((unsigned char *)I2SBuffersIn[i2s_buffer_in_index],0x10,i2s_rec_buffer_size); //0x1010 
         }
 //        if( test_dump++ == 0 ) {
 //            memset((udnsigned char *)I2SBuffersIn[i2s_buffer_in_index],0x20,i2s_rec_buffer_size); 
@@ -263,8 +265,7 @@ void HDMA_IrqHandler(void)
         //LED_SET_POWER;
     } 
 
-////////////////////////////////////////////////////////////////////////////////
-    
+////////////////////////////////////////////////////////////////////////////////    
     if( status & ( 1 << BOARD_SSC_OUT_DMA_CHANNEL) ) {   //play 
        
         //printf("-SO-") ;  
@@ -305,7 +306,7 @@ void HDMA_IrqHandler(void)
 //            }
 //        }  
         
-      if ( bulkout_trigger ) {  
+        if ( bulkout_trigger ) {  
             if( i2s_play_buffer_size <= temp ) {
                 kfifo_get(&bulkout_fifo, (unsigned char *)I2SBuffersOut[i2s_buffer_out_index], i2s_play_buffer_size) ;                
                 if( bulkout_empt != 0 ) { // if empty did happened at least once
@@ -316,30 +317,30 @@ void HDMA_IrqHandler(void)
                 bulkout_empt++;
             }
            
-      } else {
-          memset((unsigned char *)I2SBuffersOut[i2s_buffer_out_index],0x00,i2s_play_buffer_size); //can pop sound gene          
-          error_bulkout_empt++; //first bulkout fifo empty error is OK   
+        } else {
+            memset((unsigned char *)I2SBuffersOut[i2s_buffer_out_index],0x00,i2s_play_buffer_size); //can pop sound gene          
+            error_bulkout_empt++; //first bulkout fifo empty error is OK   
            
-      }
+        }
       
-      if( bulkout_empt != 0 ) { //play lost data happened,   
-          if( flag_bulkout_empt ) {//Abnormal data lost, force to fixed data to alert user play error...           
-              Alert_Sound_Gen( (unsigned char *)I2SBuffersOut[i2s_buffer_out_index], i2s_play_buffer_size,  Audio_Configure[1].sample_rate);
+        if( bulkout_empt != 0 ) { //play lost data happened,   
+            if( flag_bulkout_empt ) {//Abnormal data lost, force to fixed data to alert user play error...           
+                Alert_Sound_Gen( (unsigned char *)I2SBuffersOut[i2s_buffer_out_index], i2s_play_buffer_size,  Audio_Configure[1].sample_rate);
           
-          } else {  //Stop MMX engine first cause play empty, send 0
+            } else {  //Stop MMX engine first cause play empty, send 0
               memset((unsigned char *)I2SBuffersOut[i2s_buffer_out_index],0x00,i2s_play_buffer_size); //can pop sound gene          
           
-          }
-      }
+            }
+        }
       
 //     if(test_dump++ == 1000) {
 //        dump_buf_debug((void *)I2SBuffersOut[i2s_buffer_out_index],i2s_play_buffer_size);   
 //     }
 //      
-       SSC_WriteBuffer(AT91C_BASE_SSC0, (void *)I2SBuffersOut[i2s_buffer_out_index], i2s_buffer_out_index,  i2s_play_buffer_size);             
-       i2s_buffer_out_index ^= 1;     
+        SSC_WriteBuffer(AT91C_BASE_SSC0, (void *)I2SBuffersOut[i2s_buffer_out_index], i2s_buffer_out_index,  i2s_play_buffer_size);             
+        i2s_buffer_out_index ^= 1;     
         
-       if ( bulkout_enable && bulkout_start && (!flag_stop) && ((USBDATAEPSIZE<<0) <= kfifo_get_free_space(&bulkout_fifo)) ) { //
+        if ( bulkout_enable && bulkout_start && (!flag_stop) && ((USBDATAEPSIZE<<0) <= kfifo_get_free_space(&bulkout_fifo)) ) { //
             //printf("-LBO-") ;         
             bulkout_start = false ;
             error_bulkout_full++;
@@ -347,14 +348,16 @@ void HDMA_IrqHandler(void)
                                      USBDATAEPSIZE,
                                      (TransferCallback) UsbAudioDataReceived,
                                      0);
-       } 
+        } 
        //LED_SET_DATA;
     } 
+ 
+////////////////////////////////////////////////////////////////////////////////
     
-     if( status & ( 1 << BOARD_SPI_OUT_DMA_CHANNEL) ) {   //SPI write
+    if( status & ( 1 << BOARD_SPI_OUT_DMA_CHANNEL) ) {   //SPI write
         dma_spi_trans_done = true ; 
          
-     }
+    }
     
 }
 

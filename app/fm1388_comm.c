@@ -276,8 +276,7 @@ unsigned char fm1388_burst_read_dram_spi( unsigned int mem_addr, unsigned char *
         err = SPI_BUS_ERR;
         //APP_TRACE_INFO(("\r\nSPI_ReadBuffer_API err = %d",state));
         return err;
-    } 
-          
+    }           
     *pdata =  pbuf + 1; 
        
     return err;
@@ -299,15 +298,14 @@ unsigned char fm1388_burst_read_dram_spi( unsigned int mem_addr, unsigned char *
 *
 * Return(s)   :  error number.           
 *
-* Note(s)     :  Non-Reentrant function.   Reg_RW_Data is used.
-*                Be care full this function use fixed buffer, and return a **pointer to.
+* Note(s)     : None.
 *********************************************************************************************************
 */
 void data_revert_burst_mode( unsigned char *pDest, unsigned char *pSour,unsigned int data_length )
 {
     unsigned int i,j;    
     
-    for( i=0; i<(data_length>>3); i++ ) {
+    for( i=0; i < (data_length>>3); i++ ) {
         for( j=0; j<8; j++ ) {
             *(pDest+j) = *(pSour+7-j);
         }
@@ -472,7 +470,7 @@ unsigned char fetch_voice_data( void )
     pShortSource  = (unsigned short *)&SPI_Data_Buffer2;
     sr_num        = data_length>>1 ;//bytes to word
     ch_num        = 6; //6 channel data
-    for(i = 0 ; i < sr_num ; i++ ) {      
+    for(i = 0 ; i < sr_num ; i++ ) {     
         for( j = 0; j < ch_num ; j++ ){
           *pShortDest++ = *(pShortSource + i + j*(data_length>>1) );     
         }        
@@ -482,6 +480,8 @@ unsigned char fetch_voice_data( void )
       i= kfifo_get_free_space( &spi_rec_fifo );
       if( i>data_length*6 ) {
           break;
+      }else{
+          printf("\r\nfifo full");
       }
     }    
     pbuf = (unsigned char *)&SPI_Data_Buffer;     
@@ -553,6 +553,8 @@ unsigned char fetch_voice_data( void )
       i= kfifo_get_free_space( &spi_rec_fifo );
       if( i>data_length*6 ) {
           break;
+      }else{
+          printf("\r\nfifo full");
       }
     } 
     pbuf = (unsigned char *)&SPI_Data_Buffer;    
@@ -656,9 +658,9 @@ unsigned char spi_rec_get_addr( void )
       }
     }
     FM1388_Rec_Data_Addr[4] &= 0x0000FFFF;
-//    if( FM1388_Rec_Data_Addr[4] != 320 ) {
-//        err = 1;
-//    }
+    if( FM1388_Rec_Data_Addr[4] != global_rec_spi_buffer_size ) {
+        err = 1;
+    }
     
 //    unsigned char *pdata;
 //    err = fm1388_burst_read_dram_spi( addr[0],  &pdata,  16 );

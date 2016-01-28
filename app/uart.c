@@ -64,6 +64,10 @@
 volatile unsigned char usart0Buffers[2][UART_BUFFER_SIZE] ;//@0x20100A00 ;
 volatile unsigned char usart0CurrentBuffer = 0 ;
 
+unsigned char UART_CMD_Buffer[15];
+unsigned char state_mac      = CMD_STAT_SYNC1 ;
+unsigned char PcCmdCounter   = 0; 
+
 
 static const Pin Uart0_Pins[] = {  
 
@@ -81,38 +85,35 @@ static const Pin Uart1_Pins[] = {
       
 };
 
-unsigned char UART_CMD_Buffer[13];
-unsigned char state_mac      = CMD_STAT_SYNC1 ;
-unsigned char PcCmdCounter   = 0; 
-
-
-
 
 /*
 *********************************************************************************************************
 *                                    pcInt()
 *
 * Description : Process command data byte by byte and decode beased on communication protocol between USB AUDIO MCU and HOST MCU.
-* Argument(s) : ch : the one byte data.
+* Argument(s) : data -- the one byte data to parse.
 * Return(s)   : None.
 *
 * Note(s)     : None.
 *********************************************************************************************************
 */
-void pcInt(  unsigned char ch )
+void pcInt(  unsigned char data )
 {    
-    unsigned char *pChar = UART_CMD_Buffer;
+    unsigned char  i;
+    unsigned char *pChar, *pDest;
+    
+    pChar = UART_CMD_Buffer;
     
     switch( state_mac ) {   
         
         case CMD_STAT_SYNC1 :        
-            if(ch == CMD_DATA_SYNC1)  {
+            if(data == CMD_DATA_SYNC1)  {
                 state_mac = CMD_STAT_SYNC2 ;
             }
         break;
         
         case CMD_STAT_SYNC2 :
-            if(ch == CMD_DATA_SYNC2)  {           
+            if(data == CMD_DATA_SYNC2)  {           
                  state_mac     =  CMD_STAT_FLAG;
                  PcCmdCounter  =  0 ; 
             } else {              
@@ -122,7 +123,7 @@ void pcInt(  unsigned char ch )
         
         case CMD_STAT_FLAG :   
        
-            switch( ch )  {
+            switch( data )  {
                 case RULER_CMD_SET_AUDIO_CFG : 
                     state_mac =  CMD_STAT_CMD1 ;
                     break ;
@@ -143,58 +144,56 @@ void pcInt(  unsigned char ch )
                 break ; 
                 case RULER_CMD_START_RD_VOICE_BUF :                    
                     state_mac = CMD_STAT_CMD4; 
-                break ;   
-                        
+                break ;                           
                 default :
-                    break ;                        
+                break ;                        
             }
          
         break ;
         
         case CMD_STAT_CMD1 :            
-             UART_CMD_Buffer[PcCmdCounter++] = ch;       
-             state_mac  = CMD_STAT_DATA ;
+             UART_CMD_Buffer[PcCmdCounter++] = data;       
+             state_mac  = CMD_STAT_CFG_DATA ;
           
         break ;
         
         case CMD_STAT_CMD2 :  
-             audio_cmd_index = ch;
+             audio_cmd_index = data;
              PcCmdCounter    = 0;
              state_mac       = CMD_STAT_CMD3 ;
           
         break ;
         
         case CMD_STAT_CMD3 :  
-             usb_data_padding = ch;           
+             usb_data_padding = data;           
              state_mac        = CMD_STAT_SYNC1 ;
           
         break ;
         
         case CMD_STAT_CMD4 :  
-            *(pChar+PcCmdCounter++) = ch;            
+            *(pChar+PcCmdCounter++) = data;            
             if( PcCmdCounter >= 4 ) { //check overflow
                //Voice_Buf_Cfg = *(VOICE_BUF_CFG *)pChar;
-               unsigned char *pDest = (unsigned char *)&Voice_Buf_Cfg;
-               for (unsigned char k = 0; k<sizeof(Voice_Buf_Cfg);k++) {
-                  *(pDest+k) = *(pChar+k);
+               pDest = (unsigned char *)&Voice_Buf_Cfg;
+               for (i = 0; i < sizeof(Voice_Buf_Cfg); i++ ) {
+                  *(pDest+i) = *(pChar+i);
                }    
                audio_cmd_index = AUDIO_CMD_READ_VOICE_BUF ; 
                PcCmdCounter = 0 ;        
                state_mac = CMD_STAT_SYNC1;                
             }
             
-        break ;        
- 
+        break ;   
         
-        case CMD_STAT_DATA :
-            *(pChar+PcCmdCounter++) = ch;          
-            if( PcCmdCounter >= 13 ) { //check overflow
-               //Audio_Configure[(*pChar)&0x01] = *(AUDIO_CFG *)pChar; 
-               unsigned char *pDest = (unsigned char *)&(Audio_Configure[(*pChar)&0x01]);
-               for (unsigned char k = 0; k<sizeof(Audio_Configure[0]);k++) {
-                   *(pDest+k) = *(pChar+k);
+        case CMD_STAT_CFG_DATA :
+            *(pChar+PcCmdCounter++) = data;          
+            if( PcCmdCounter >= 15 ) { //check overflow
+               //Audio_Configure[(*pChar)&0x01] = *(AUDIO_CFG *)pChar;               
+               pDest = (unsigned char *)&( Audio_Configure[(*pChar)&0x01] );
+               for ( i = 0; i < sizeof(AUDIO_CFG); i++ ) {
+                   *(pDest+i) = *(pChar+i);
                }               
-               audio_cmd_index = AUDIO_CMD_CFG ; 
+               audio_cmd_index = (*pChar)&0x01 ? AUDIO_CMD_CFG_PLAY : AUDIO_CMD_CFG_REC ; 
                PcCmdCounter = 0 ;        
                state_mac = CMD_STAT_SYNC1;                
             } 
@@ -495,16 +494,13 @@ void Check_UART_CMD( void )
     
     counter = data_received ;
     
-    if( counter == 0 ) {
-        return ;
-    }
-    
-    data_received = 0;
-    
-    for( i = 0; i < counter; i++)  { //analyze the data          
-        pcInt( usart0Buffers[1-usart0CurrentBuffer][i] ) ;
+    if( counter ) {  
         
-    } 
+        data_received = 0;        
+        for( i = 0; i < counter; i++)  { //analyze the data          
+            pcInt( usart0Buffers[1-usart0CurrentBuffer][i] ) ;            
+        } 
+    }
     
     
 }

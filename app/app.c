@@ -51,7 +51,7 @@
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
-char fw_version[] = "[FW:A:V2.45]";
+char fw_version[] = "[FW:A:V2.46]";
 ////////////////////////////////////////////////////////////////////////////////
 
 //Buffer Level 1:  USB data stream buffer : 64 B
@@ -146,9 +146,13 @@ static unsigned int Stop_CMD_Miss_Counter = 0;
 static unsigned char global_rec_num               ;  //total TDM channels
 static unsigned char global_rec_samples           ;  //samples per package of one interruption 
 
-static unsigned char global_rec_gpio_mask         ; // gpio   to record 
-static unsigned char global_rec_gpio_num          ; //total gpio num to record
+static unsigned char global_rec_gpio_mask         ;  //gpio   to record 
+static unsigned char global_rec_gpio_num          ;  //total gpio num to record
 static unsigned char global_rec_gpio_index        ;  //index gpio start at which TDM channel 
+
+static unsigned char global_rec_spi_num           ;  //total spi channel num to record
+static unsigned char global_rec_spi_index         ;  //index spi start at which TDM channel 
+unsigned char global_rec_spi_buffer_size   ;   
 
 unsigned int counter_play    = 0;
 unsigned int counter_rec     = 0;
@@ -433,7 +437,7 @@ static unsigned char Init_Rec_Setting( void )
     delay        = Audio_Configure[0].sample_delay;
     start        = Audio_Configure[0].sample_start;
    
-    global_rec_samples    =  sample_rate / 1000 * 2;    
+    global_rec_samples    =  sample_rate / 1000 * 2;  //2ms  
     global_rec_num        =  Audio_Configure[0].channel_num ;
     global_rec_gpio_mask  =  Audio_Configure[0].gpio_rec_bit_mask ;
     global_rec_gpio_num   =  Audio_Configure[0].gpio_rec_num ;
@@ -451,7 +455,7 @@ static unsigned char Init_Rec_Setting( void )
         printf("Init Rec Setting Error !\r\n");
         return err;
     }
-    
+     
     if( bit_length == 16 ) { //16bit case
         i2s_rec_buffer_size  = sample_rate / 1000 * channels_rec  * 2 * 2; // 2ms * 16bit
     } else { //32bit case
@@ -496,6 +500,10 @@ static unsigned char Audio_Start_Rec( void )
     while(  PIO_Get(&SSC_Sync_Pin) ) ;     
     SSC_EnableReceiver(AT91C_BASE_SSC0);    //enable AT91C_SSC_RXEN
     
+    err = Rec_Voice_Buf_Start();
+    if( err != 0 ) {
+        return err;
+    }
     return 0;  
 }
 
@@ -645,13 +653,14 @@ static void Audio_Stop( void )
 *
 * Argument(s) :  None.
 *
-* Return(s)   :  None.
+* Return(s)   :  error number. 
 *
 * Note(s)     : None.
 *********************************************************************************************************
 */
-void Rec_Voice_Buf_Start( void )
+unsigned char Rec_Voice_Buf_Start( void )
 {
+    unsigned char err = 0;
     
     if( global_rec_spi_en == 0) {
         
@@ -661,14 +670,17 @@ void Rec_Voice_Buf_Start( void )
         Init_SPI_FIFO();
         global_rec_spi_en = 1;
         //Request_Start_Voice_Buf_Trans();
-        spi_rec_get_addr();
-        spi_rec_start_cmd(); 
-        
-        
-        
+        err = spi_rec_get_addr();
+        if( err != 0 ) {
+            return err;
+        }
+        err = spi_rec_start_cmd(); 
+        if( err != 0 ){ 
+            return err;
+        }              
         
     }
-    
+    return err;
 }
 
 
@@ -763,8 +775,8 @@ void Audio_State_Control( void )
                 }                                         
                 err = Audio_Start_Play();
                 if( err == 0 ) {                    
-                  delay_ms(1);  //make sure play and rec enter interruption in turns 2ms              
-                  err = Audio_Start_Rec(); 
+                    delay_ms(1);  //make sure play and rec enter interruption in turns 2ms              
+                    err = Audio_Start_Rec(); 
                 }
                 time_start_test = second_counter ;
                 audio_state_check = 3; 
@@ -772,22 +784,37 @@ void Audio_State_Control( void )
 
             case AUDIO_CMD_STOP : 
                 if( audio_state_check != 0 ) {
-                  Audio_Stop(); 
-                  Rec_Voice_Buf_Stop(); 
-                  printf("\r\nThis cycle test time cost: ");
-                  Get_Run_Time(second_counter - time_start_test);   
-                  printf("\r\n\r\n");
-                  time_start_test = 0 ;
-                  audio_state_check = 0; 
+                    Audio_Stop(); 
+                    Rec_Voice_Buf_Stop(); 
+                    printf("\r\nThis cycle test time cost: ");
+                    Get_Run_Time(second_counter - time_start_test);   
+                    printf("\r\n\r\n");
+                    time_start_test = 0 ;
+                    audio_state_check = 0; 
                 }
             break;   
         
-            case AUDIO_CMD_CFG: 
-                if( Audio_Configure[1].bit_length == 16 ) {
-                    temp = Audio_Configure[1].sample_rate / 1000 *  Audio_Configure[1].channel_num * 2 * 2;
-                } else { //32
-                    temp = Audio_Configure[1].sample_rate / 1000 *  Audio_Configure[1].channel_num * 2 * 4;        
+            case AUDIO_CMD_CFG_REC: //check SPI REC buffer size
+                if( Audio_Configure[0].bit_length == 16 ) { //16 bit
+                    temp = Audio_Configure[0].sample_rate / 1000 *  Audio_Configure[0].spi_rec_num * 10 * 2 ;  //10ms * 2bytes
+                } else if( Audio_Configure[0].bit_length == 32 ){ //32 bit
+                    temp = Audio_Configure[0].sample_rate / 1000 *  Audio_Configure[0].spi_rec_num * 10 * 4 ;  //10ms * 4bytes      
                 }            
+                if( ( temp>>1 ) > SPI_BUF_SIZE ) { //SPI fetch data buffer must not exceed half buffer size, due to RAM limitation
+                    err = ERR_AUD_CFG;
+                }
+                global_rec_spi_buffer_size = temp;
+              
+            break;
+            
+            case AUDIO_CMD_CFG_PLAY: //check TDM play pre-buffer size
+                if( Audio_Configure[1].bit_length == 16 ) {  //16 bit
+                    temp = Audio_Configure[1].sample_rate / 1000 *  Audio_Configure[1].channel_num * 2 * 2;  //2ms * 2bytes
+                } else if( Audio_Configure[1].bit_length == 32 ) { //32bit
+                    temp = Audio_Configure[1].sample_rate / 1000 *  Audio_Configure[1].channel_num * 2 * 4;  //2ms * 4bytes      
+                } else {
+                    err = ERR_AUD_CFG;
+                }
                 if( (temp * PLAY_BUF_DLY_N) > USB_OUT_BUFFER_SIZE ) { //play pre-buffer must not exceed whole play buffer
                     err = ERR_AUD_CFG;
                 }              
@@ -819,7 +846,7 @@ void Audio_State_Control( void )
 //                if( Audio_Configure[0].channel_num != 1 ) { //make sure  no other channel recording while SPI recording
 //                    err = ERR_AUD_CFG;
 //                } else {
-                    Rec_Voice_Buf_Start();
+                  err = Rec_Voice_Buf_Start();
 //                }
             break;          
             

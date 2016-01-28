@@ -28,7 +28,7 @@
 #define CMD_STAT_CMD1      3
 #define CMD_STAT_CMD2      4
 #define CMD_STAT_CMD3      5
-#define CMD_STAT_DATA      6
+#define CMD_STAT_CFG_DATA  6
 #define CMD_STAT_CMD4      7
 
 #define CMD_DATA_SYNC1     0xEB

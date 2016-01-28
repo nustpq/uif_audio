@@ -31,8 +31,8 @@
 #define SPI_BUS_ERR                      179u
 #define TO_501_CMD_ERR                   181u 
 
-#define SPI_FIFO_SIZE                    2048//(3072)
-#define SPI_BUF_SIZE                     (160*8)//(320*8)
+#define SPI_FIFO_SIZE                    (3072)//2048 < 160*2*8=2560 < 3072
+#define SPI_BUF_SIZE                     (1280)//(160*2*8)/2 
 
 #define     FM1388_SPI_S_16BIT_RD      0x00
 #define     FM1388_SPI_S_16BIT_WR      0x01

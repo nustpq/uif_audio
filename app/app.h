@@ -55,10 +55,11 @@
 #define  AUDIO_CMD_START_PLAY           0x02
 #define  AUDIO_CMD_START_PALYREC        0x03
 #define  AUDIO_CMD_STOP                 0x04
-#define  AUDIO_CMD_CFG                  0x05
-#define  AUDIO_CMD_VERSION              0x06
-#define  AUDIO_CMD_RESET                0x07
-#define  AUDIO_CMD_READ_VOICE_BUF       0x08
+#define  AUDIO_CMD_CFG_REC              0x05
+#define  AUDIO_CMD_CFG_PLAY             0x06
+#define  AUDIO_CMD_VERSION              0x07
+#define  AUDIO_CMD_RESET                0x08
+#define  AUDIO_CMD_READ_VOICE_BUF       0x09
 
 
 #define  AUDIO_STATE_STOP               0x00
@@ -75,11 +76,10 @@
 //ERROR CODE from 0 ~ 244 reserved for Audio MCU
 
 
-
 typedef struct {
  
   unsigned char  type;//Rec: =0x00, Play: =0x01
-  unsigned char  channel_num; //1~8  
+  unsigned char  channel_num; //I2S channel 1~8  
   unsigned short sample_rate;
   unsigned char  bit_length; // 16, 24, 32
   unsigned char  gpio_rec_num;
@@ -89,7 +89,9 @@ typedef struct {
   unsigned char  sample_cki;
   unsigned char  sample_delay;
   unsigned char  sample_start;
-  unsigned char  master_slave; //not used
+  unsigned char  master_slave; //not used  
+  unsigned char  spi_rec_start_index;
+  unsigned char  spi_rec_num;
 }AUDIO_CFG;
 
 
@@ -183,7 +185,8 @@ void SSC_Play_Stop(void);
 void SSC_Record_Stop(void);
 void Init_I2S_Buffer( void );
 bool First_Pack_Check_BO( unsigned int size  );
-
+unsigned char Rec_Voice_Buf_Start( void );
+  
 extern void Init_Bus_Matix();
 
 extern char fw_version[];
@@ -191,7 +194,7 @@ extern char fw_version[];
 extern unsigned int counter_play ;
 extern unsigned int counter_rec ;
 
-
+unsigned char global_rec_spi_buffer_size   ; 
 
 extern unsigned int test_dump;
 extern volatile unsigned int debug_trans_counter1 ;
