@@ -51,7 +51,7 @@
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
-char fw_version[] = "[FW:A:V2.45]";
+char fw_version[] = "[FW:A:V2.451]";
 ////////////////////////////////////////////////////////////////////////////////
 
 //Buffer Level 1:  USB data stream buffer : 64 B
@@ -216,7 +216,6 @@ void __ramfunc Merge_GPIO_Data( unsigned short *pdata )
             
 }
 
-
 /*
 *********************************************************************************************************
 *                                    Merge_SPI_Data()
@@ -250,7 +249,6 @@ unsigned int Merge_SPI_Data( unsigned short *pdata, unsigned int free_size )
     
     kfifo_get(&spi_rec_fifo, (unsigned char *)pdata, data_size );
      
-
 /*     
     if( global_rec_spi_fast == 1 ) { //fast read.          
         if( free_size >= SPI_BUF_SIZE ) {            
@@ -289,7 +287,7 @@ unsigned int Merge_SPI_Data( unsigned short *pdata, unsigned int free_size )
         }
     }
 */  
-    
+   
     return data_size;       
 }
 
@@ -729,7 +727,7 @@ void Audio_State_Control( void )
         err = ERR_USB_STATE;
         
     } else {
-   
+        //printf("\r\naudio_cmd_index = %d",audio_cmd_index); 
         switch( audio_cmd_index ) {
             
             case AUDIO_CMD_START_REC :                

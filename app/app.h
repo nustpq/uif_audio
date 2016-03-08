@@ -76,20 +76,24 @@
 
 
 
-typedef struct {
- 
-  unsigned char  type;//Rec: =0x00, Play: =0x01
+typedef struct { 
+  unsigned char  type;//Rec =0, Play =1
   unsigned char  channel_num; //1~8  
-  unsigned short sample_rate;
+  unsigned short sample_rate; //16000, 48000 
   unsigned char  bit_length; // 16, 24, 32
+  unsigned char  lin_ch_mask;
   unsigned char  gpio_rec_num;
   unsigned char  gpio_rec_start_index;
   unsigned char  gpio_rec_bit_mask;
-  unsigned char  sample_format;
+  unsigned char  spi_rec_num;
+  unsigned char  spi_rec_start_index;
+  unsigned char  spi_rec_bit_mask;
+  unsigned char  sample_format;  //1:I2S  2:PDM  3:PCM/TDM  
   unsigned char  sample_cki;
   unsigned char  sample_delay;
   unsigned char  sample_start;
-  unsigned char  master_slave; //not used
+  unsigned char  master_slave; 
+  unsigned char  reserved[3];
 }AUDIO_CFG;
 
 
@@ -97,8 +101,7 @@ typedef struct {
   unsigned int   spi_speed;
   unsigned char  spi_mode;  
   unsigned char  gpio_irq; 
-  unsigned char  reserved1;
-  unsigned char  reserved2;
+  unsigned char  reserved[2];
 }VOICE_BUF_CFG;
 
 typedef void  (*CPU_FNCT_VOID)(void);

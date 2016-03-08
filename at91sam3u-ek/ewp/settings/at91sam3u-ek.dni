@@ -11,7 +11,7 @@ ByteLimit=50
 [DebugChecksum]
 <<<<<<< HEAD
 <<<<<<< HEAD
-Checksum=54328581
+Checksum=121039693
 =======
 Checksum=-105934952
 >>>>>>> sync_method
@@ -58,13 +58,9 @@ Fmt10={W}0:value	4	0
 [Disassemble mode]
 mode=0
 [Breakpoints2]
-Bp0=_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\..\app\app.c}.691.5" 0 0 1 "" 0 "" 0
-Bp1=_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\..\app\app.c}.754.17" 0 0 1 "" 0 "" 0
-Bp2=_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\..\app\uart.c}.194.35" 0 0 1 "" 0 "" 0
-Bp3=_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\..\app\fm1388_comm.c}.726.5" 0 0 1 "" 0 "" 0
-Bp4=_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\..\app\fm1388_comm.c}.561.5" 0 0 1 "" 0 "" 0
-Bp5=_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\..\app\fm1388_comm.c}.732.9" 0 0 1 "" 0 "" 0
-Count=6
+Bp0=_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\..\app\app.c}.689.5" 0 0 1 "" 0 "" 0
+Bp1=_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\..\app\uart.c}.193.35" 0 0 1 "" 0 "" 0
+Count=2
 [Log file]
 LoggingEnabled=_ 0
 LogFile=_ ""
