@@ -34,41 +34,36 @@
 #include <tc/tc.h>
 #include <pio/pio.h>
 #include "im501_comm.h"
+#include "spi_rec.h"
 #include "kfifo.h"
 #include "app.h"
 #include "gpio.h"
 
+
 VOICE_BUF  voice_buf_data;
-
-unsigned char SPI_FIFO_Buffer[ SPI_FIFO_SIZE ] ;
-unsigned char SPI_Data_Buffer[ SPI_BUF_SIZE +1 ];  //+1 fix spi bug
-unsigned char SPI_Data_Buffer2[ SPI_BUF_SIZE ]; 
 unsigned char im501_irq_counter;
-unsigned int  global_rec_spi_en = 0 ;
 
+unsigned char MCU_Load_Vec( unsigned char firsttime );
 
-/*
-*********************************************************************************************************
-*                                           Init_SPI_FIFO()
-*
-* Description :  Init kfifo for SPI recording.
-*
-* Argument(s) :  None.
-*
-* Return(s)   :  error number.           
-*
-* Note(s)     :  None.
-*********************************************************************************************************
-*/
-void Init_SPI_FIFO( void )
-{   
-    kfifo_t *pfifo;
-    
-    pfifo = &spi_rec_fifo;;
-    kfifo_init_static(pfifo, SPI_FIFO_Buffer, SPI_FIFO_SIZE);
-    
-}
+unsigned char im501_read_reg_i2c( unsigned char reg_addr, unsigned char *pdata );
+unsigned char im501_read_reg_spi( unsigned char reg_addr, unsigned char *pdata );
 
+unsigned char im501_write_reg_i2c( unsigned char reg_addr, unsigned char data );
+unsigned char im501_write_reg_spi( unsigned char reg_addr, unsigned char data );
+
+unsigned char im501_read_dram_i2c( unsigned int mem_addr, unsigned char *pdata );
+unsigned char im501_read_dram_spi( unsigned int mem_addr, unsigned char *pdata );
+
+unsigned char im501_burst_read_dram_spi( unsigned int mem_addr, unsigned char **pdata, unsigned int data_len );
+
+unsigned char im501_write_dram_i2c( unsigned int mem_addr, unsigned char *pdata );
+unsigned char im501_write_dram_spi( unsigned int mem_addr, unsigned char *pdata );
+
+unsigned char im501_switch_i2c_spi( unsigned char if_type, unsigned char spi_mode );
+
+unsigned char Request_Start_Voice_Buf_Trans( void );
+unsigned char Request_Stop_Voice_Buf_Trans( void );
+unsigned char Request_Enter_PSM( void );
 
 /*
 *********************************************************************************************************
@@ -554,7 +549,7 @@ unsigned char im501_switch_i2c_spi( unsigned char if_type, unsigned char spi_mod
 * Note(s)     :  
 *********************************************************************************************************
 */
-unsigned char fetch_voice_data( unsigned int start_addr, unsigned int data_length )
+static unsigned char fetch_voice_data( unsigned int start_addr, unsigned int data_length )
 {
     unsigned char err;
     unsigned char *pbuf;
@@ -565,23 +560,23 @@ unsigned char fetch_voice_data( unsigned int start_addr, unsigned int data_lengt
     test = 0;
 #endif
     
-    a = data_length / SPI_BUF_SIZE ;
-    b = data_length % SPI_BUF_SIZE ;    
+    a = data_length / IM501_BUF_SIZE ;
+    b = data_length % IM501_BUF_SIZE ;    
     
     for( i=0; i<a; i++ ) {   
-        err = im501_burst_read_dram_spi( start_addr,  &pbuf,  SPI_BUF_SIZE ); 
+        err = im501_burst_read_dram_spi( start_addr,  &pbuf,  IM501_BUF_SIZE ); 
         if( err != NO_ERR ){ 
             return err;
         }    
-        start_addr +=  SPI_BUF_SIZE;               
-        while ( SPI_BUF_SIZE > kfifo_get_free_space( &spi_rec_fifo ) ) ; //atom operation?
+        start_addr +=  IM501_BUF_SIZE;               
+        while ( IM501_BUF_SIZE > kfifo_get_free_space( &spi_rec_fifo ) ) ; //atom operation?
 #if( 0 )   /////////debug
         unsigned short *ps = (unsigned short *)pbuf;
-        for( unsigned int k = 0; k < (SPI_BUF_SIZE>>1); k++) {
+        for( unsigned int k = 0; k < (IM501_BUF_SIZE>>1); k++) {
             *(ps++) = test++;    
         }
 #endif  ////////////////
-        kfifo_put(&spi_rec_fifo, pbuf, SPI_BUF_SIZE);          
+        kfifo_put(&spi_rec_fifo, pbuf, IM501_BUF_SIZE);          
     }
     
     if( b > 0 ) {
@@ -744,8 +739,8 @@ unsigned char Write_CMD_To_iM501( unsigned char cmd_index, unsigned short para )
 unsigned char Request_Start_Voice_Buf_Trans( void )
 {
     
-    unsigned char err;
-        
+    unsigned char err; 
+    
     err = Write_CMD_To_iM501( TO_DSP_CMD_REQ_START_BUF_TRANS, 0 );
  
     return err;
@@ -822,11 +817,7 @@ void Service_To_iM501_IRQ( void )
     
     unsigned char err;
     To_Host_CMD   cmd;
-    
-    if( global_rec_spi_en == 0 ) {
-        return;
-    }
-    
+        
 #if( 0 ) //debug     
     global_rec_spi_fast = 1;
     fetch_voice_data( HW_VOICE_BUF_START, 32768);            
@@ -841,7 +832,7 @@ void Service_To_iM501_IRQ( void )
         if( err != 0 ){
             return ;
         }
-       
+        
         err = parse_to_host_command( cmd );
         if( err != 0 ){ 
             return ;
@@ -879,6 +870,53 @@ void ISR_iM501_IRQ( const Pin *pPin )
 }
 
 
+/*
+*********************************************************************************************************
+*                                    iM501_SPI_Rec_Start()
+*
+* Description :  Start SPI data recording procedure.
+*
+* Argument(s) :  None.
+*
+* Return(s)   :  error number. 
+*
+* Note(s)     : None.
+*********************************************************************************************************
+*/
+unsigned char iM501_SPI_Rec_Start( unsigned char gpio_irq )
+{
+    unsigned char err = 0;
+    
+    im501_irq_counter = 0;     
+    Config_GPIO_Interrupt( gpio_irq, ISR_iM501_IRQ );
+    err = Request_Start_Voice_Buf_Trans();        
+   
+    return err;
+}
 
 
+/*
+*********************************************************************************************************
+*                                    iM501_SPI_Rec_Stop()
+*
+* Description :  Stop SPI data recordin.
+*
+* Argument(s) :  None.
+*
+* Return(s)   :  error number. 
+*
+* Note(s)     : None.
+*********************************************************************************************************
+*/
+unsigned char iM501_SPI_Rec_Stop( void )
+{
+    
+    unsigned char err = 0 ;   
+
+    err = Request_Stop_Voice_Buf_Trans(); 
+
+    
+    return err;
+    
+}
 

@@ -703,11 +703,11 @@ void SSC_Init( unsigned int mclk, unsigned char slot_num, unsigned char slot_len
       
     tcmr.cks    = 1 ;   // tx use TK pin
     rcmr.cks    = 1 ;   // rx use TK pin, as RK pin for sync
-    tcmr.cko    = 0 ;   // input only
-    rcmr.cko    = 0 ;   // input only  
+    tcmr.cko    = 0 ;   // input only   [Receive Clock Output Mode]
+    rcmr.cko    = 0 ;   // input only   [Receive Clock Output Mode]
     
-    tcmr.cki    = 0;  // 0: falling egde send
-    rcmr.cki    = 1;  // 1: rising edge lock  
+    tcmr.cki    = 0;  // 0: falling egde send   [Receive Clock Inversion]
+    rcmr.cki    = 1;  // 1: rising edge lock    [Receive Clock Inversion]
     tcmr.start  = 4;  // 4: falling edge trigger for low left, 5: rising edge trigger for high left,
     rcmr.start  = 4; 
     

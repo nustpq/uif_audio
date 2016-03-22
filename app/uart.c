@@ -58,13 +58,13 @@
 #include "usb.h"
 #include "uart.h"
 
-
+#include "spi_rec.h"
 
 
 volatile unsigned char usart0Buffers[2][UART_BUFFER_SIZE] ;//@0x20100A00 ;
 volatile unsigned char usart0CurrentBuffer = 0 ;
 
-unsigned char UART_CMD_Buffer[15];
+unsigned char UART_CMD_Buffer[sizeof(AUDIO_CFG)];
 unsigned char state_mac      = CMD_STAT_SYNC1 ;
 unsigned char PcCmdCounter   = 0; 
 
@@ -84,6 +84,7 @@ static const Pin Uart1_Pins[] = {
     PIN_USART1_RTS
       
 };
+
 
 
 /*
@@ -172,11 +173,12 @@ void pcInt(  unsigned char data )
         
         case CMD_STAT_CMD4 :  
             *(pChar+PcCmdCounter++) = data;            
-            if( PcCmdCounter >= 4 ) { //check overflow
-               //Voice_Buf_Cfg = *(VOICE_BUF_CFG *)pChar;
-               pDest = (unsigned char *)&Voice_Buf_Cfg;
-               for (i = 0; i < sizeof(Voice_Buf_Cfg); i++ ) {
+            if( PcCmdCounter >= sizeof(SPI_REC_CFG) ) { //check overflow           
+               //spi_rec_cfg = *(SPI_REC_CFG *)pChar;
+               pDest = (unsigned char *)&spi_rec_cfg;
+               for ( i = 0; i<sizeof(spi_rec_cfg); i++ ) {
                   *(pDest+i) = *(pChar+i);
+
                }    
                audio_cmd_index = AUDIO_CMD_READ_VOICE_BUF ; 
                PcCmdCounter = 0 ;        
@@ -185,9 +187,10 @@ void pcInt(  unsigned char data )
             
         break ;   
         
+
         case CMD_STAT_CFG_DATA :
             *(pChar+PcCmdCounter++) = data;          
-            if( PcCmdCounter >= 15 ) { //check overflow
+            if( PcCmdCounter >= sizeof(AUDIO_CFG) ) { //check overflow
                //Audio_Configure[(*pChar)&0x01] = *(AUDIO_CFG *)pChar;               
                pDest = (unsigned char *)&( Audio_Configure[(*pChar)&0x01] );
                for ( i = 0; i < sizeof(AUDIO_CFG); i++ ) {

@@ -68,37 +68,12 @@
 #define  IM501_SPI_CMD_REG_WR            0x06 
 #define  IM501_SPI_CMD_REG_RD            0x02 
        
-#define SUCCESS                          0u
-#define NO_ERR                           0u
-#define NULL                             0u
 
-#define SPI_BUS_ERR                      179u
-#define I2C_BUS_ERR                      180u
-#define TO_501_CMD_ERR                   181u 
 
-#define SPI_FIFO_SIZE                    (3072)
-#define SPI_BUF_SIZE                     (1024*2)
-
-extern unsigned int  global_rec_spi_en;
-//extern unsigned char global_rec_spi_fast;
 
 extern unsigned char im501_irq_counter;
 extern unsigned char SPI_Data_Buffer[];
-extern unsigned char SPI_Data_Buffer2[]; 
-
-
-//typedef struct {
-//    unsigned short attri;
-//    unsigned char  cmd_byte;
-//    unsigned char  status;
-//}To_Host_CMD ;
-//
-//typedef struct {
-//    unsigned short attri;
-//    unsigned char  cmd_byte_ext;
-//    unsigned char  status;
-//    unsigned char  cmd_byte;
-//}To_501_CMD ;
+//extern unsigned char SPI_Data_Buffer2[]; 
 
 
 typedef struct {
@@ -124,32 +99,12 @@ typedef struct {
 
 
 
-//extern unsigned char iM401_Bypass( void );
-//extern unsigned char iM401_Standby( void );
-
-unsigned char MCU_Load_Vec( unsigned char firsttime );
-
-unsigned char im501_read_reg_i2c( unsigned char reg_addr, unsigned char *pdata );
-unsigned char im501_read_reg_spi( unsigned char reg_addr, unsigned char *pdata );
-
-unsigned char im501_write_reg_i2c( unsigned char reg_addr, unsigned char data );
-unsigned char im501_write_reg_spi( unsigned char reg_addr, unsigned char data );
-
-unsigned char im501_read_dram_i2c( unsigned int mem_addr, unsigned char *pdata );
-unsigned char im501_read_dram_spi( unsigned int mem_addr, unsigned char *pdata );
-
-unsigned char im501_burst_read_dram_spi( unsigned int mem_addr, unsigned char **pdata, unsigned int data_len );
-
-unsigned char im501_write_dram_i2c( unsigned int mem_addr, unsigned char *pdata );
-unsigned char im501_write_dram_spi( unsigned int mem_addr, unsigned char *pdata );
-
-unsigned char im501_switch_i2c_spi( unsigned char if_type, unsigned char spi_mode );
 
 
 void ISR_iM501_IRQ( const Pin *pPin );
 void Service_To_iM501_IRQ( void );
-unsigned char Request_Start_Voice_Buf_Trans( void );
-unsigned char Request_Stop_Voice_Buf_Trans( void );
-unsigned char Request_Enter_PSM( void );
+unsigned char iM501_SPI_Rec_Start( unsigned char gpio_irq );
+unsigned char iM501_SPI_Rec_Stop( void );
+
 
 #endif

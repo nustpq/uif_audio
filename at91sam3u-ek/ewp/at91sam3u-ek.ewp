@@ -1936,10 +1936,16 @@
       <name>$PROJ_DIR$\..\..\app\i2s.c</name>
     </file>
     <file>
+      <name>$PROJ_DIR$\..\..\app\im501_comm.c</name>
+    </file>
+    <file>
       <name>$PROJ_DIR$\..\..\app\kfifo.c</name>
     </file>
     <file>
       <name>$PROJ_DIR$\..\..\app\sine_table.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\..\app\spi_rec.c</name>
     </file>
     <file>
       <name>$PROJ_DIR$\..\..\app\uart.c</name>

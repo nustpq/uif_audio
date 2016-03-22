@@ -597,7 +597,7 @@ const unsigned char OSExCompIDDescriptor[] = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, //reserved
     
     0x00,  //interface number
-    0x01,  // reserved  
+    0x01,  // reserved                        
     ('W'), //compatible ID
     ('I'),
     ('N'),   

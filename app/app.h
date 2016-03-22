@@ -72,49 +72,49 @@
 #define  ERR_AUD_CFG                    251u
 #define  ERR_CMD_TYPE                   252u
 #define  ERR_TDM_FORMAT                 253u
+#define  ERR_SPI_REC                    254u
+
+#define  ATTRI_DUT_ID_IM501             501u
+#define  ATTRI_DUT_ID_FM1388            1388u
 
 //ERROR CODE from 0 ~ 244 reserved for Audio MCU
 
 
-typedef struct {
- 
-  unsigned char  type;//Rec: =0x00, Play: =0x01
-  unsigned char  channel_num; //I2S channel 1~8  
-  unsigned short sample_rate;
+typedef struct { 
+  unsigned char  type;//Rec =0, Play =1
+  unsigned char  channel_num; //1~8  
+  unsigned short sample_rate; //16000, 48000 
+
   unsigned char  bit_length; // 16, 24, 32
+  unsigned char  lin_ch_mask;
+  
   unsigned char  gpio_rec_num;
   unsigned char  gpio_rec_start_index;
   unsigned char  gpio_rec_bit_mask;
-  unsigned char  sample_format;
-  unsigned char  sample_cki;
-  unsigned char  sample_delay;
-  unsigned char  sample_start;
-  unsigned char  master_slave; //not used  
-  unsigned char  spi_rec_start_index;
+  
   unsigned char  spi_rec_num;
+  unsigned char  spi_rec_start_index;
+  unsigned char  spi_rec_bit_mask;
+  
+  unsigned char  format;  //1:I2S  2:PDM  3:PCM/TDM  
+  unsigned char  ssc_cki;
+  unsigned char  ssc_delay;
+  unsigned char  ssc_start;
+  unsigned char  master_slave;
+  
+  unsigned char  reserved[3];
 }AUDIO_CFG;
 
 
-typedef struct {
-  unsigned int   spi_speed;
-  unsigned char  spi_mode;  
-  unsigned char  gpio_irq; 
-  unsigned char  reserved1;
-  unsigned char  reserved2;
-}VOICE_BUF_CFG;
 
 typedef void  (*CPU_FNCT_VOID)(void);
 
 
-extern VOICE_BUF_CFG Voice_Buf_Cfg;
 
 extern AUDIO_CFG  Audio_Configure[];
 extern unsigned char audio_cmd_index;
-extern unsigned char usb_data_padding; 
-extern VOICE_BUF_CFG Voice_Buf_Cfg;
+extern unsigned char usb_data_padding;
 extern unsigned char audio_cmd_ack;
-
-
 
 extern unsigned char usbBufferBulkOut[];
 extern unsigned char usbBufferBulkIn[];
@@ -142,7 +142,7 @@ extern kfifo_t bulkin_fifo_cmd;
 extern volatile unsigned int i2s_play_buffer_size ;
 extern volatile unsigned int i2s_rec_buffer_size ;
 
-extern unsigned char audio_state_check;
+//extern unsigned char audio_state_check;
 extern unsigned char  sample_index;
 
 
@@ -185,7 +185,7 @@ void SSC_Play_Stop(void);
 void SSC_Record_Stop(void);
 void Init_I2S_Buffer( void );
 bool First_Pack_Check_BO( unsigned int size  );
-unsigned char Rec_Voice_Buf_Start( void );
+unsigned char SPI_Rec_Start( void );
   
 extern void Init_Bus_Matix();
 
@@ -194,7 +194,10 @@ extern char fw_version[];
 extern unsigned int counter_play ;
 extern unsigned int counter_rec ;
 
-unsigned char global_rec_spi_buffer_size   ; 
+extern unsigned char global_rec_spi_mask         ;  //spi   to record 
+extern unsigned char global_rec_spi_num           ;  //total spi channel num to record
+extern unsigned char global_rec_spi_index         ;  //index spi start at which TDM channel 
+extern unsigned char global_rec_spi_buffer_size   ; 
 
 extern unsigned int test_dump;
 extern volatile unsigned int debug_trans_counter1 ;

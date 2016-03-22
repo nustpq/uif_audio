@@ -1,2 +1,6 @@
 [MainWindow]
-WindowPlacement=_ 149 0 1154 768 3
+<<<<<<< HEAD
+WindowPlacement=_ -664 210 354 976 3
+=======
+WindowPlacement=_ -7 47 998 775 3
+>>>>>>> FM1388_spi_rec_2451

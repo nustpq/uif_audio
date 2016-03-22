@@ -243,10 +243,8 @@ void HDMA_IrqHandler(void)
         //fill_buf_debug( (unsigned char *)I2SBuffersIn[i2s_buffer_in_index],i2s_rec_buffer_size);
         //Alert_Sound_Gen( (unsigned char *)I2SBuffersIn[i2s_buffer_in_index], i2s_rec_buffer_size,  Audio_Configure[1].sample_rate);
         if( bulkout_trigger ) { //sync play&rec
-            Merge_GPIO_Data( (unsigned short *)I2SBuffersIn[i2s_buffer_in_index] );
-            //      
-            temp = Merge_SPI_Data( (unsigned short *)I2SBuffersIn[i2s_buffer_in_index], temp );
-            //
+            Merge_GPIO_Data( (unsigned short *)I2SBuffersIn[i2s_buffer_in_index] );   //check if need merge GPIO data to I2SBuffersIn[]          
+            temp = Merge_SPI_Data( (unsigned short *)I2SBuffersIn[i2s_buffer_in_index], temp );    //check if need merge SPI data to I2SBuffersIn[]       
             kfifo_put(&bulkin_fifo, (unsigned char *)I2SBuffersIn[i2s_buffer_in_index], temp);//i2s_rec_buffer_size) ;
         }
         SSC_ReadBuffer(AT91C_BASE_SSC0, (void *)I2SBuffersIn[i2s_buffer_in_index], i2s_buffer_in_index, flag_stop ? 0 : i2s_rec_buffer_size);                      

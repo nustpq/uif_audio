@@ -11,7 +11,11 @@ ByteLimit=50
 [DebugChecksum]
 <<<<<<< HEAD
 <<<<<<< HEAD
-Checksum=308033321
+<<<<<<< HEAD
+Checksum=152364364
+=======
+Checksum=121039693
+>>>>>>> FM1388_spi_rec_2451
 =======
 Checksum=-105934952
 >>>>>>> sync_method
@@ -55,6 +59,8 @@ Fmt7={W}0:start_addr	4	0
 Fmt8={W}0:status	4	0
 Fmt9={W}0:test	4	0
 Fmt10={W}0:value	4	0
+<<<<<<< HEAD
+=======
 [Log file]
 LoggingEnabled=_ 0
 LogFile=_ ""
@@ -73,13 +79,9 @@ Exclusions=
 [Disassemble mode]
 mode=0
 [Breakpoints2]
-Bp0=_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\..\app\app.c}.691.5" 0 0 1 "" 0 "" 0
-Bp1=_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\..\app\app.c}.754.17" 0 0 1 "" 0 "" 0
-Bp2=_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\..\app\uart.c}.194.35" 0 0 1 "" 0 "" 0
-Bp3=_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\..\app\fm1388_comm.c}.730.5" 0 0 1 "" 0 "" 0
-Bp4=_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\..\app\fm1388_comm.c}.565.2" 0 0 1 "" 0 "" 0
-Bp5=_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\..\app\fm1388_comm.c}.736.9" 0 0 1 "" 0 "" 0
-Count=6
+Bp0=_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\..\app\uart.c}.193.13" 0 0 1 "" 0 "" 0
+Bp1=_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\..\app\app.c}.690.17" 0 0 1 "" 0 "" 0
+Count=2
 [Aliases]
 Count=0
 SuppressDialog=0

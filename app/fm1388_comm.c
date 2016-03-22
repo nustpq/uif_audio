@@ -21,7 +21,7 @@
 *                                      Unified EVM Interface Board
 *
 * Filename      : fm1388_comm.c
-* Version       : V1.0.0
+* Version       : V1.1.0
 * Programmer(s) : PQ
 *********************************************************************************************************
 * Note(s)       :
@@ -33,44 +33,15 @@
 #include <utility/trace.h>
 #include <tc/tc.h>
 #include <pio/pio.h>
+#include <utility/led.h>
 #include "fm1388_comm.h"
+#include "spi_rec.h"
 #include "kfifo.h"
 #include "app.h"
 #include "gpio.h"
 
 
-VOICE_BUF  voice_buf_data;
-
-unsigned char SPI_FIFO_Buffer[ SPI_FIFO_SIZE ] ;
-unsigned char SPI_Data_Buffer[ SPI_BUF_SIZE +1 ];  //+1 fix spi bug
-unsigned char SPI_Data_Buffer2[ SPI_BUF_SIZE +1 ]; 
-unsigned char im501_irq_counter;
-unsigned int  global_rec_spi_en = 0 ;
-
 unsigned int  FM1388_Rec_Data_Addr[5];
-
-
-/*
-*********************************************************************************************************
-*                                           Init_SPI_FIFO()
-*
-* Description :  Init kfifo for SPI recording.
-*
-* Argument(s) :  None.
-*
-* Return(s)   :  error number.           
-*
-* Note(s)     :  None.
-*********************************************************************************************************
-*/
-void Init_SPI_FIFO( void )
-{   
-    kfifo_t *pfifo;
-    
-    pfifo = &spi_rec_fifo;;
-    kfifo_init_static(pfifo, SPI_FIFO_Buffer, SPI_FIFO_SIZE);
-    
-}
 
 
 /*
@@ -92,10 +63,10 @@ unsigned char fm1388_single_write_dram_spi( unsigned int mem_addr, unsigned char
 {
     unsigned char err, state;
     unsigned char buf[8];
-    unsigned char *pbuf;
+    //unsigned char *pbuf;
     
     err   =  NO_ERR;
-    pbuf  = (unsigned char *)SPI_Data_Buffer; //global usage
+    //pbuf  = (unsigned char *)SPI_Data_Buffer; //global usage
       
     buf[0] =  FM1388_SPI_S_16BIT_WR; //0x01
     buf[4] =  mem_addr & 0xFF;
@@ -245,7 +216,8 @@ unsigned char fm1388_single_read_dram_spi_32bit( unsigned int mem_addr, unsigned
 * Return(s)   :  error number.           
 *
 * Note(s)     :  Non-Reentrant function.   Reg_RW_Data is used.
-*                Be care full this function use fixed buffer, and return a **pointer to.
+*                Be care full this function use fixed buffer:    SPI_Data_Buffer
+*                and return a **pointer to.
 *********************************************************************************************************
 */
 unsigned char fm1388_burst_read_dram_spi( unsigned int mem_addr, unsigned char **pdata, unsigned int data_len )
@@ -303,7 +275,7 @@ unsigned char fm1388_burst_read_dram_spi( unsigned int mem_addr, unsigned char *
 */
 void data_revert_burst_mode( unsigned char *pDest, unsigned char *pSour,unsigned int data_length )
 {
-    unsigned int i,j;    
+    unsigned int i,j;  
     
     for( i=0; i < (data_length>>3); i++ ) {
         for( j=0; j<8; j++ ) {
@@ -404,20 +376,23 @@ unsigned char fetch_voice_data( void )
 */
 
 //due to ram limitation in MCU, changed to fetch buffer data twice
-unsigned char fetch_voice_data( void )
+static unsigned char fetch_voice_data0( void )
 {
     unsigned char   err;
     unsigned int    i,j;
-    unsigned char  *pbuf, *pdata;
+    unsigned char  *pbuf, *pdata, *phalf;
     unsigned short *pShortDest, *pShortSource;
     unsigned int    data_length;
     unsigned int    start_addr;
     unsigned int    sr_num ;
     unsigned int    ch_num ; 
       
-    ////////////////////////////     top half       //////////////////////////
+    
     data_length = FM1388_Rec_Data_Addr[4] >> 1;
-    pbuf        = (unsigned char *)&SPI_Data_Buffer2;
+    phalf       = (unsigned char *)&SPI_Data_Buffer + (FM1388_BUF_SIZE_HALF + 2) ; //use bottom half of SPI_Data_Buffer to save temp data
+    
+    ////////////////////////////     top half       //////////////////////////
+    pbuf        = phalf;
     //AEC Ref
     start_addr  = FM1388_Rec_Data_Addr[0];
     err = fm1388_burst_read_dram_spi( start_addr,  &pdata,  data_length ); 
@@ -467,7 +442,7 @@ unsigned char fetch_voice_data( void )
     data_revert_burst_mode( pbuf, pdata, data_length);
     
     pShortDest    = (unsigned short *)&SPI_Data_Buffer;
-    pShortSource  = (unsigned short *)&SPI_Data_Buffer2;
+    pShortSource  = (unsigned short *)phalf;
     sr_num        = data_length>>1 ;//bytes to word
     ch_num        = 6; //6 channel data
     for(i = 0 ; i < sr_num ; i++ ) {     
@@ -487,10 +462,8 @@ unsigned char fetch_voice_data( void )
     pbuf = (unsigned char *)&SPI_Data_Buffer;     
     kfifo_put(&spi_rec_fifo, pbuf, data_length*6); //total 6 channel data          
     
-    /////////////////////////   bottom half data   ////////////////////////////
-    
-    data_length = FM1388_Rec_Data_Addr[4] >> 1;
-    pbuf        = (unsigned char *)&SPI_Data_Buffer2;
+    /////////////////////////   bottom half data   ////////////////////////////  
+    pbuf        = phalf;;
     //AEC Ref
     start_addr  = FM1388_Rec_Data_Addr[0] + data_length;
     err = fm1388_burst_read_dram_spi( start_addr,  &pdata,  data_length ); 
@@ -540,7 +513,7 @@ unsigned char fetch_voice_data( void )
     data_revert_burst_mode( pbuf, pdata, data_length);
     
     pShortDest    = (unsigned short *)&SPI_Data_Buffer;
-    pShortSource  = (unsigned short *)&SPI_Data_Buffer2;
+    pShortSource  = (unsigned short *)phalf;
     sr_num        = data_length>>1 ;//bytes to word
     ch_num        = 6; 
     for(i = 0 ; i < sr_num ; i++ ) {      
@@ -558,12 +531,120 @@ unsigned char fetch_voice_data( void )
       }
     } 
     pbuf = (unsigned char *)&SPI_Data_Buffer;    
-    kfifo_put(&spi_rec_fifo, pbuf, data_length*6); //total 6 channel data   
+    kfifo_put(&spi_rec_fifo, pbuf, data_length*6); //total 6 channel data 
     
+    //////////////////////////////////////////////////////////
     return err;
     
 }
 
+
+//due to ram limitation in MCU, changed to fetch buffer data twice( top/bottom half, k for loop)
+//sampe data is 16 bit length only
+
+static unsigned char fetch_voice_data( void )
+{
+    unsigned char   err;
+    unsigned int    i,j,k;
+    unsigned char  *pbuf, *pdata, *phalf;
+    unsigned short *pShortDest, *pShortSource;
+    unsigned int    data_length;
+    unsigned int    start_addr;
+    unsigned int    sr_num ;
+    unsigned int    ch_num ; 
+          
+    data_length = FM1388_Rec_Data_Addr[4] >> 1; // data_length /2 as we fetch data twice for top half and bottom half 
+    phalf       = (unsigned char *)&SPI_Data_Buffer + (FM1388_BUF_SIZE_HALF + 2) ; //use bottom half of SPI_Data_Buffer to save temp data
+       
+    for(  k = 0; k <2; k++ ) {
+      
+        pbuf        = phalf;        
+        if( (global_rec_spi_mask>>0) & 0x01 ) {
+            //AEC Ref  
+            start_addr  = FM1388_Rec_Data_Addr[0] + data_length * k ;
+            err = fm1388_burst_read_dram_spi( start_addr,  &pdata,  data_length ); 
+            if( err != NO_ERR ){ 
+                return err;
+            }
+            data_revert_burst_mode( pbuf, pdata, data_length);
+            pbuf  += data_length;
+        }
+        if( (global_rec_spi_mask>>1) & 0x01 ) {    
+            //MIC0
+            start_addr   = FM1388_Rec_Data_Addr[1] + data_length * k ;;        
+            err = fm1388_burst_read_dram_spi( start_addr,  &pdata,  data_length ); 
+            if( err != NO_ERR ){ 
+                return err;
+            }
+            data_revert_burst_mode( pbuf, pdata, data_length);
+            pbuf  += data_length;
+        }
+        if( (global_rec_spi_mask>>2) & 0x01 ) { 
+            //MIC1
+            start_addr  = FM1388_Rec_Data_Addr[1] + (data_length<<1) + data_length * k ;;        
+            err = fm1388_burst_read_dram_spi( start_addr,  &pdata,  data_length ); 
+            if( err != NO_ERR ){ 
+                return err;
+            }
+            data_revert_burst_mode( pbuf, pdata, data_length);
+            pbuf  += data_length;
+        }
+        if( (global_rec_spi_mask>>3) & 0x01 ) { 
+            //MIC2
+            start_addr  = FM1388_Rec_Data_Addr[1] + (data_length<<2) + data_length * k ;;        
+            err = fm1388_burst_read_dram_spi( start_addr,  &pdata,  data_length ); 
+            if( err != NO_ERR ){ 
+                return err;
+            }
+            data_revert_burst_mode( pbuf, pdata, data_length);
+            pbuf  += data_length;
+        }
+        if( (global_rec_spi_mask>>4) & 0x01 ) {    
+            //Lout
+            start_addr  = FM1388_Rec_Data_Addr[2] + data_length * k ;;       
+            err = fm1388_burst_read_dram_spi( start_addr,  &pdata,  data_length ); 
+            if( err != NO_ERR ){ 
+                return err;
+            } 
+            data_revert_burst_mode( pbuf, pdata, data_length);
+            pbuf  += data_length;
+        }
+        if( (global_rec_spi_mask>>5) & 0x01 ) { 
+            //Lin
+            start_addr  = FM1388_Rec_Data_Addr[3] + data_length * k ;;        
+            err = fm1388_burst_read_dram_spi( start_addr,  &pdata,  data_length ); 
+            if( err != NO_ERR ){ 
+                return err;
+            } 
+            data_revert_burst_mode( pbuf, pdata, data_length);
+        }
+        
+        pShortDest    = (unsigned short *)&SPI_Data_Buffer;
+        pShortSource  = (unsigned short *)phalf;
+        sr_num        = data_length>>1 ;//length to samples for 16bit data
+        ch_num        = global_rec_spi_num; //6 channel data ?
+        for(i = 0 ; i < sr_num ; i++ ) {     
+            for( j = 0; j < ch_num ; j++ ){
+              *pShortDest++ = *(pShortSource + i + j*(data_length>>1) );     
+            }        
+        }
+        
+        while(1){
+          i= kfifo_get_free_space( &spi_rec_fifo );
+          if( i>data_length * ch_num ) {
+              break;
+          }else{
+              printf("\r\nfifo full");
+          }
+        }    
+        pbuf = (unsigned char *)&SPI_Data_Buffer;     
+        kfifo_put(&spi_rec_fifo, pbuf, data_length * ch_num); //total 6 channel data    
+        
+    }
+        
+    return err;
+    
+}
 /*
 *********************************************************************************************************
 *                                           spi_rec_start_cmd()
@@ -709,7 +790,7 @@ unsigned char spi_rec_check_ready( void )
 
 /*
 *********************************************************************************************************
-*                                    SPI_Rec_Service()
+*                                    Service_To_FM1388_Poll()
 *
 * Description :  Service to iM501 IRQ interruption 
 *                Should be in Main Loop, inquiring the data ready flag
@@ -718,28 +799,84 @@ unsigned char spi_rec_check_ready( void )
 *
 * Return(s)   :  None.
 *
-* Note(s)     : None.
+* Note(s)     : 
+     ----------------------------------------------------------------------
+     SR  | data_fetch_time per frame |  frame_time  |   MIPS cost @ 300MIPS
+     ----|---------------------------|--------------|----------------------
+     8k  |      1.0ms                |      10ms    |       30 MIPS
+     16k |      1.9ms                |      10ms    |       57 MIPS
+     24k |      2.4ms                |       8ms    |       90 MIPS
+     ----------------------------------------------------------------------
 *********************************************************************************************************
 */
-void SPI_Rec_Service( void )
+void Service_To_FM1388_Poll( void )
 {  
     unsigned char err;
     
-    if( global_rec_spi_en == 0 ) {
-        return;
-    }
-    
     if( spi_rec_check_ready() == 0 ) { 
         //GPIOPIN_Set(7,1);
+        LED_Set(USBD_LEDPOWER);   //on LED
         fetch_voice_data();  
         spi_rec_start_cmd(); 
         //GPIOPIN_Set(7,0);
+        LED_Clear(USBD_LEDPOWER);  //off LED
     }    
 }
 
+/*
+*********************************************************************************************************
+*                                    FM1388_SPI_Rec_Start()
+*
+* Description :  Start SPI data recording procedure.
+*
+* Argument(s) :  None.
+*
+* Return(s)   :  error number. 
+*
+* Note(s)     : None.
+*********************************************************************************************************
+*/
+unsigned char FM1388_SPI_Rec_Start( void )
+{
+    unsigned char err = 0;
+    
+    err = spi_rec_get_addr();
+    if( err != 0 ) {
+        return err; 
+    }
+    err = spi_rec_start_cmd();         
+    LED_Clear(USBD_LEDPOWER); //off LED
+    
+    return err;
+}
 
 
-                          
+/*
+*********************************************************************************************************
+*                                    FM1388_SPI_Rec_Stop()
+*
+* Description :  Stop SPI data recordin.
+*
+* Argument(s) :  None.
+*
+* Return(s)   :  error number. 
+*
+* Note(s)     : None.
+*********************************************************************************************************
+*/
+unsigned char FM1388_SPI_Rec_Stop( void )
+{
+    
+    unsigned char err = 0 ;   
+
+    err = spi_rec_stop_cmd(); 
+    
+    LED_Set(USBD_LEDPOWER); //on LED
+    
+    return err;
+    
+}
+
 
 
 
