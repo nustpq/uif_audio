@@ -630,7 +630,7 @@ unsigned char parse_to_host_command( To_Host_CMD cmd )
         
         case TO_HOST_CMD_DATA_BUF_RDY : //Reuest host to read To-Host Buffer-Fast         
             voice_buf_data.index   = (cmd.attri >>8) & 0xFFFF;  //package index
-            printf("Pack No.[%5d], Bank[%0X]\r\n",voice_buf_data.index, cmd.attri & 0xFF );            
+            printf("Pack No.[%5d], Bank[%0X]\r\n",voice_buf_data.index, cmd.attri & 0xFF ); //            
             if( (cmd.attri & 0xFF) == 0xF0 ) {  
                address = HW_VOICE_BUF_START; //BANK0 address 
             } else {

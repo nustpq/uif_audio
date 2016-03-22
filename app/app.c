@@ -51,7 +51,7 @@
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
-char fw_version[] = "[FW:A:V2.44]";
+char fw_version[] = "[FW:A:V2.441]";
 ////////////////////////////////////////////////////////////////////////////////
 
 //Buffer Level 1:  USB data stream buffer : 64 B
@@ -250,8 +250,12 @@ unsigned int Merge_SPI_Data( unsigned short *pdata, unsigned int free_size )
     temp    = kfifo_get_data_size( &spi_rec_fifo);  
     
     data_size = free_size >= temp ? temp : free_size ;
-    
-    kfifo_get(&spi_rec_fifo, (unsigned char *)pdata, data_size );
+//    if( data_size == 0 ) {
+//        data_size = i2s_rec_buffer_size;
+//        memset((unsigned char *)pdata, 0x00, data_size);          
+//    } else {
+        kfifo_get(&spi_rec_fifo, (unsigned char *)pdata, data_size );
+//    }
      
 
 /*     
@@ -683,17 +687,19 @@ void Rec_Voice_Buf_Start( void )
 * Note(s)     : None.
 *********************************************************************************************************
 */
-void Rec_Voice_Buf_Stop( void )
+unsigned char Rec_Voice_Buf_Stop( void )
 {
     
+    unsigned char err = 0;
     if( global_rec_spi_en == 1 ) {
         
-        Request_Stop_Voice_Buf_Trans();
+        err = Request_Stop_Voice_Buf_Trans();
         Disable_SPI_Port();
         Disable_GPIO_Interrupt( Voice_Buf_Cfg.gpio_irq );
         global_rec_spi_en = 0;
         
     }
+    return err;
     
 }
 
@@ -770,7 +776,10 @@ void Audio_State_Control( void )
             case AUDIO_CMD_STOP : 
                 if( audio_state_check != 0 ) {
                   Audio_Stop(); 
-                  Rec_Voice_Buf_Stop(); 
+                  err = Rec_Voice_Buf_Stop(); 
+                  if( err != 0 ) {
+                      printf("Rec_Voice_Buf_Stop failed : %d", err);
+                  }
                   printf("\r\nThis cycle test time cost: ");
                   Get_Run_Time(second_counter - time_start_test);   
                   printf("\r\n\r\n");
