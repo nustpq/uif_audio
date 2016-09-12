@@ -12,7 +12,7 @@ ByteLimit=50
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
-Checksum=152364364
+Checksum=1817072445
 =======
 Checksum=121039693
 >>>>>>> FM1388_spi_rec_2451
@@ -80,8 +80,7 @@ Exclusions=
 mode=0
 [Breakpoints2]
 Bp0=_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\..\app\uart.c}.193.13" 0 0 1 "" 0 "" 0
-Bp1=_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\..\app\app.c}.690.17" 0 0 1 "" 0 "" 0
-Count=2
+Count=1
 [Aliases]
 Count=0
 SuppressDialog=0

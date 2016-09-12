@@ -456,7 +456,7 @@ static unsigned char Audio_Start_Rec( void )
     bulkin_enable  = true ;
     
     while( !PIO_Get(&SSC_Sync_Pin) ) ;
-    while(  PIO_Get(&SSC_Sync_Pin) ) ;     
+    //while(  PIO_Get(&SSC_Sync_Pin) ) ;     
     SSC_EnableReceiver(AT91C_BASE_SSC0);    //enable AT91C_SSC_RXEN
     
 //    err = SPI_Rec_Start();
@@ -492,8 +492,8 @@ static unsigned char Audio_Start_Play( void )
     SSC_Play_Start(); 
     bulkout_enable  = true ;
     
-    while( !PIO_Get(&SSC_Sync_Pin) ) ;
-    while(  PIO_Get(&SSC_Sync_Pin) ) ;    
+    while( !PIO_Get(&SSC_Sync_Pin) ) ;  //4
+    //while(  PIO_Get(&SSC_Sync_Pin) ) ;   //5 
     SSC_EnableTransmitter(AT91C_BASE_SSC0); //enable AT91C_SSC_TXEN  
   
     return 0;

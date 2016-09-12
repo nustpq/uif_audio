@@ -67,7 +67,7 @@ void Alert_Sound_Gen( unsigned char *pdata, unsigned int size, unsigned int REC_
 void Init_I2S_Buffer( void )
 {
   
-#if( false )   //debug use
+#if( true )   //debug use
     
     unsigned int i;
     unsigned short  *pInt;
@@ -85,7 +85,8 @@ void Init_I2S_Buffer( void )
        *(pInt32+i++) = 0x82345678 ; 
     } 
     
-    pInt = (unsigned short *)I2SBuffersOut[1] ;
+    
+    pInt = (unsigned short *)I2SBuffersOut[0] ;
     for( i = 0; i< (I2S_IN_BUFFER_SIZE>>1);  ) {        
        *(pInt+i++) = 0x1122 ;      
        *(pInt+i++) = 0x3344 ;
