@@ -11,7 +11,7 @@ ByteLimit=50
 [DebugChecksum]
 <<<<<<< HEAD
 <<<<<<< HEAD
-Checksum=-1091720825
+Checksum=758168694
 =======
 Checksum=-105934952
 >>>>>>> sync_method
@@ -52,13 +52,6 @@ Fmt7={W}0:start_addr	4	0
 Fmt8={W}0:status	4	0
 Fmt9={W}0:test	4	0
 Fmt10={W}0:value	4	0
-[Disassemble mode]
-mode=0
-[Breakpoints2]
-Bp0=_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\..\app\app.c}.689.5" 0 0 1 "" 0 "" 0
-Bp1=_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\..\app\app.c}.756.17" 0 0 1 "" 0 "" 0
-Bp2=_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\..\app\uart.c}.194.35" 0 0 1 "" 0 "" 0
-Count=3
 [Log file]
 LoggingEnabled=_ 0
 LogFile=_ ""
@@ -66,9 +59,6 @@ Category=_ 0
 [TermIOLog]
 LoggingEnabled=_ 0
 LogFile=_ ""
-[Aliases]
-Count=0
-SuppressDialog=0
 [CallStackLog]
 Enabled=0
 [DriverProfiling]
@@ -77,3 +67,13 @@ Mode=0
 Graph=0
 Symbiont=0
 Exclusions=
+[Disassemble mode]
+mode=0
+[Breakpoints2]
+Bp0=_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\..\app\app.c}.689.5" 0 0 1 "" 0 "" 0
+Bp1=_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\..\app\app.c}.756.17" 0 0 1 "" 0 "" 0
+Bp2=_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\..\app\uart.c}.194.35" 0 0 1 "" 0 "" 0
+Count=3
+[Aliases]
+Count=0
+SuppressDialog=0

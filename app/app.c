@@ -51,7 +51,7 @@
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
-char fw_version[] = "[FW:A:V2.44]";
+char fw_version[] = "[FW:A:V2.441]";
 ////////////////////////////////////////////////////////////////////////////////
 
 //Buffer Level 1:  USB data stream buffer : 64 B
@@ -496,7 +496,7 @@ static unsigned char Audio_Start_Rec( void )
     bulkin_enable  = true ;
     
     while( !PIO_Get(&SSC_Sync_Pin) ) ;
-    while(  PIO_Get(&SSC_Sync_Pin) ) ;     
+    //while(  PIO_Get(&SSC_Sync_Pin) ) ;     
     SSC_EnableReceiver(AT91C_BASE_SSC0);    //enable AT91C_SSC_RXEN
     
     return 0;  
@@ -528,7 +528,7 @@ static unsigned char Audio_Start_Play( void )
     bulkout_enable  = true ;
     
     while( !PIO_Get(&SSC_Sync_Pin) ) ;
-    while(  PIO_Get(&SSC_Sync_Pin) ) ;    
+    //while(  PIO_Get(&SSC_Sync_Pin) ) ;    
     SSC_EnableTransmitter(AT91C_BASE_SSC0); //enable AT91C_SSC_TXEN  
   
     return 0;
