@@ -136,7 +136,7 @@ unsigned char im501_read_reg_spi( unsigned char reg_addr, unsigned char *pdata )
     unsigned char *pbuf;
     
     err  = NO_ERR;
-    pbuf = (unsigned char *)SPI_Data_Buffer; //global usage
+    pbuf = pSPI_Data_Buffer;//(unsigned char *)SPI_Data_Buffer; //global usage
     
     buf[0] =  IM501_SPI_CMD_REG_RD;
     buf[1] =  reg_addr;
@@ -315,7 +315,7 @@ unsigned char im501_read_dram_spi( unsigned int mem_addr, unsigned char *pdata )
     unsigned char *pbuf;
     
     err   =  NO_ERR;
-    pbuf  = (unsigned char *)SPI_Data_Buffer; //global usage
+    pbuf  = pSPI_Data_Buffer;//(unsigned char *)SPI_Data_Buffer; //global usage
   
     
     buf[0] =  IM501_SPI_CMD_DM_RD;
@@ -371,7 +371,7 @@ unsigned char im501_burst_read_dram_spi( unsigned int mem_addr, unsigned char **
     unsigned char *pbuf;
     
     err   =  NO_ERR;
-    pbuf = (unsigned char *)SPI_Data_Buffer; //global usage    
+    pbuf = pSPI_Data_Buffer;//(unsigned char *)SPI_Data_Buffer; //global usage    
     
     buf[0] =  IM501_SPI_CMD_DM_RD;
     buf[1] =  mem_addr     & 0xFF;
@@ -817,7 +817,11 @@ void Service_To_iM501_IRQ( void )
     
     unsigned char err;
     To_Host_CMD   cmd;
-        
+    
+    if( global_rec_spi_en == 0 ) {
+        return ;
+    }
+    
 #if( 0 ) //debug     
     global_rec_spi_fast = 1;
     fetch_voice_data( HW_VOICE_BUF_START, 32768);            

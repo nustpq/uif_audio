@@ -35,10 +35,13 @@
 #include <usb/device/cdc-serial/CDCDSerialDriverDescriptors.h>
 #include "kfifo.h"
 #include "led.h"
+#include "gpio.h"
+#include "spi_rec.h"
 #include <usb.h>
 #include <app.h>
 #include <dbgu/dbgu.h>
 #include <irq/irq.h>
+#include <spi/spi.h>
 #include <tc/tc.h>
 #include <utility/led.h>
 
@@ -83,7 +86,7 @@ int main( void )
         Audio_State_Control();
         DBGUART_Service();
         Init_USB_Callback();
-        SPI_Rec_Service();
+        SPI_Service();
       
     }
     

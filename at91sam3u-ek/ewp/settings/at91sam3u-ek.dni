@@ -12,7 +12,7 @@ ByteLimit=50
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
-Checksum=1817072445
+Checksum=1743721389
 =======
 Checksum=121039693
 >>>>>>> FM1388_spi_rec_2451
@@ -33,11 +33,6 @@ MixedMode=1
 CStepIntDis=_ 0
 [struct_types]
 Fmt0=AUDIO_CFG-sample_rate	4	0
-Fmt1=VOICE_BUF_CFG-gpio_irq	4	0
-Fmt2=VOICE_BUF_CFG-reserved1	4	0
-Fmt3=VOICE_BUF_CFG-reserved2	4	0
-Fmt4=VOICE_BUF_CFG-spi_mode	4	0
-Fmt5=VOICE_BUF_CFG-spi_speed	4	0
 [array_types]
 Fmt0=unsigned char[1025]	4	0
 Fmt1=unsigned char[1281]	4	0
@@ -51,16 +46,15 @@ Fmt7=unsigned short[8]	4	0
 Fmt0={W}0:PcCmdCounter	3	0
 Fmt1={W}0:address	4	0
 Fmt2={W}0:buffSize	4	0
-Fmt3={W}0:dd	4	0
-Fmt4={W}0:reg_A	4	0
-Fmt5={W}0:reg_B	4	0
-Fmt6={W}0:srcAddress	4	0
-Fmt7={W}0:start_addr	4	0
-Fmt8={W}0:status	4	0
-Fmt9={W}0:test	4	0
-Fmt10={W}0:value	4	0
-<<<<<<< HEAD
-=======
+Fmt3={W}0:data_length	4	0
+Fmt4={W}0:dd	4	0
+Fmt5={W}0:reg_A	4	0
+Fmt6={W}0:reg_B	4	0
+Fmt7={W}0:srcAddress	4	0
+Fmt8={W}0:start_addr	4	0
+Fmt9={W}0:status	4	0
+Fmt10={W}0:test	4	0
+Fmt11={W}0:value	4	0
 [Log file]
 LoggingEnabled=_ 0
 LogFile=_ ""
@@ -79,8 +73,9 @@ Exclusions=
 [Disassemble mode]
 mode=0
 [Breakpoints2]
-Bp0=_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\..\app\uart.c}.193.13" 0 0 1 "" 0 "" 0
-Count=1
+Bp0=_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\..\app\usb.c}.345.13" 0 0 1 "" 0 "" 0
+Bp1=_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\..\app\spi_rec.c}.160.5" 0 0 1 "" 0 "" 0
+Count=2
 [Aliases]
 Count=0
 SuppressDialog=0

@@ -119,7 +119,7 @@ __ramfunc unsigned int kfifo_release(kfifo_t *fifo, unsigned int len) {
 //no interruption for debug printf use
 __ramfunc unsigned int kfifo_get_free_space(kfifo_t *fifo) {
     
-    return( fifo->size - fifo->in + fifo->out );     
+    return( fifo->size - (fifo->in - fifo->out) );     
 
 }
 

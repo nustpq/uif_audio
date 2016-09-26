@@ -38,6 +38,7 @@
 #include "kfifo.h"
 #include "tc.h"
 #include "app.h"
+   #include "fm1388_comm.h"
 //------------------------------------------------------------------------------
 //         Global Functions
 //------------------------------------------------------------------------------
@@ -156,7 +157,7 @@ unsigned char TC_FindMckDivisor(
 ///  Timer #2  :  For test time record
 //------------------------------------------------------------------------------
 volatile unsigned int second_counter = 0 ;
-    
+/*   
 void TC2_IrqHandler( void )
 {    
     unsigned int status;
@@ -197,7 +198,50 @@ void Timer2_Init( void )
     
 }
 
+*/
+    
+void TC2_IrqHandler( void )
+{    
+    unsigned int status;
+    static unsigned int timer2_counter = 0;
+    status = AT91C_BASE_TC2->TC_SR;
+    
+    if ((status & AT91C_TC_CPCS) != 0) { 
+        AT91C_BASE_TC2->TC_CCR = AT91C_TC_CLKEN | AT91C_TC_SWTRG;
+        if( ++timer2_counter == spi_play_timertick ) { // 1ms*10 = 10ms
+     //   if( ++timer2_counter == 7 ) { // 1ms*10 = 10ms
+        //    LED_TOGGLE_POWER;
+            timer2_counter = 0 ;
+            second_counter++; 
+       //     LED_TOGGLE_DATA ; //test
+            timedelay_flag=1;
+          //LED_Clear(USBD_LEDPOWER);            
+        }
+    }
+}
 
+void Timer2_Init( void )
+{
+    unsigned int counter; 
+    
+    counter =  MCK / 128 / 1000; //1ms time 
+    counter = (counter & 0xFFFF0000) == 0 ? counter : 0xFFFF ;    
+
+    AT91C_BASE_PMC->PMC_PCER = (1 << AT91C_ID_TC2);
+    AT91C_BASE_TC2->TC_CCR = AT91C_TC_CLKDIS;
+    AT91C_BASE_TC2->TC_IDR = 0xFFFFFFFF;
+    AT91C_BASE_TC2->TC_CMR = AT91C_TC_CLKS_TIMER_DIV4_CLOCK //choose 1/128
+                             | AT91C_TC_CPCSTOP
+                             | AT91C_TC_CPCDIS
+                             | AT91C_TC_WAVESEL_UP_AUTO
+                             | AT91C_TC_WAVE;
+    AT91C_BASE_TC2->TC_RC = counter ;
+    AT91C_BASE_TC2->TC_IER = AT91C_TC_CPCS;
+    IRQ_ConfigureIT(AT91C_ID_TC2, TIMER_PRIORITY, TC2_IrqHandler);
+    IRQ_EnableIT(AT91C_ID_TC2);
+ //   AT91C_BASE_TC2->TC_CCR = AT91C_TC_CLKEN +  AT91C_TC_SWTRG ;
+    
+}
 
 
 //------------------------------------------------------------------------------

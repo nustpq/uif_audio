@@ -173,8 +173,8 @@ void pcInt(  unsigned char data )
         
         case CMD_STAT_CMD4 :  
             *(pChar+PcCmdCounter++) = data;            
-            if( PcCmdCounter >= sizeof(SPI_REC_CFG) ) { //check overflow           
-               //spi_rec_cfg = *(SPI_REC_CFG *)pChar;
+            if( PcCmdCounter >= sizeof(SPI_PLAY_REC_CFG) ) { //check overflow           
+               //spi_rec_cfg = *(SPI_PLAY_REC_CFG *)pChar;
                pDest = (unsigned char *)&spi_rec_cfg;
                for ( i = 0; i<sizeof(spi_rec_cfg); i++ ) {
                   *(pDest+i) = *(pChar+i);

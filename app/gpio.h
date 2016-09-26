@@ -27,8 +27,8 @@ typedef union __GPIOPORT
 }GPIOPORT ;
 
 
-extern void GPIO_Init(void);
-extern void GPIODIR_FLOAT( unsigned int pin  ) ;
+void Init_GPIO(void);
+void GPIODIR_FLOAT( unsigned int pin  ) ;
 
 extern void GPIODIR_Set(unsigned int pin ) ;
 extern unsigned char GPIOPIN_Set(unsigned int pin , unsigned int dat) ;

@@ -51,7 +51,7 @@
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
-char fw_version[] = "[FW:A:V2.5]";
+char fw_version[] = "[FW:A:V2.52]";
 ////////////////////////////////////////////////////////////////////////////////
 
 //Buffer Level 1:  USB data stream buffer : 64 B
@@ -161,7 +161,6 @@ unsigned int test_dump       = 0;
 unsigned int time_start_test = 0;
 
 extern unsigned char Check_Toggle_State( void );
-
 
 void Init_Bus_Matix( void )
 {
@@ -299,7 +298,7 @@ __ramfunc bool First_Pack_Check_BO( unsigned int size )
 * Note(s)     :  Must be called after reset FIFO and before start audio.
 *********************************************************************************************************
 */
-static void First_Pack_Padding_BI( void )
+void First_Pack_Padding_BI( void )
 {
     memset( (unsigned char *)I2SBuffersIn[0], usb_data_padding, USBDATAEPSIZE );
     kfifo_put(&bulkin_fifo, (unsigned char *)I2SBuffersIn[0], USBDATAEPSIZE) ; 
@@ -444,7 +443,9 @@ static unsigned char Init_Rec_Setting( void )
 static unsigned char Audio_Start_Rec( void )
 {  
     unsigned char err;  
-    
+    if( Audio_Configure[0].spi_rec_num != 0 ) {
+        return 0;
+    } 
 //   if( Toggle_PID_BI ) { //send padding package if PC Driver expect DATA1 Token          
 //         kfifo_put(&bulkin_fifo, (unsigned char *)I2SBuffersIn[0], USBDATAEPSIZE) ;
 //    }  
@@ -483,7 +484,10 @@ static unsigned char Audio_Start_Rec( void )
 */
 static unsigned char Audio_Start_Play( void )
 {  
-    unsigned char err;  
+    unsigned char err;
+    if( Audio_Configure[1].spi_rec_num != 0 ) {
+        return 0;
+    }
     Init_I2S_Buffer();
     err = Init_Play_Setting(); 
     if( err != 0 ) {
@@ -515,14 +519,16 @@ static unsigned char Audio_Start_Play( void )
 */
 static void Audio_Stop( void )
 {  
-    
+//    if( (Audio_Configure[0].spi_rec_num != 0) || (Audio_Configure[1].spi_rec_num != 0) ) {
+//        return ;
+//    }  
 #ifdef METHOD_BY_RESET_MCU             
     printf("\r\n Got command to reset MCU...MCM_RESET_CMD");                                   
     while(1) {
         AT91C_BASE_RSTC->RSTC_RCR = 0xA5000005 ; //reset MCU     
     }       
 #endif  
-     
+
     printf( "\r\nStop Play & Rec..."); 
     flag_stop        = true ;     
     delay_ms(20); //wait until DMA interruption done. 
@@ -730,8 +736,7 @@ void Audio_State_Control( void )
                 }              
             break;
             
-            case AUDIO_CMD_VERSION: 
-                
+            case AUDIO_CMD_VERSION:                  
                 USART_WriteBuffer( AT91C_BASE_US0,(void *)fw_version, sizeof(fw_version) );  //Version string, no ACK 
             break;         
             
@@ -753,8 +758,12 @@ void Audio_State_Control( void )
     
             break;  
             
-            case AUDIO_CMD_READ_VOICE_BUF : 
-                  err = SPI_Rec_Start();
+            case AUDIO_CMD_READ_VOICE_BUF :  
+                err = SPI_Rec_Start();
+                if( err != 0 ) { 
+                    break; 
+                };
+                err = SPI_Play_Start();
 
             break;          
             

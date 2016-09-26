@@ -4,7 +4,7 @@
 /*-Vector table start*/
 define symbol __ICFEDIT_vector_start__ = 0x00080000; /*Add for CMSIS*/
 /*-Memory Regions-*/
-define symbol __ICFEDIT_region_RAM0_start__  = 0x20078000;
+define symbol __ICFEDIT_region_RAM0_start__  = 0x20078000; 
 define symbol __ICFEDIT_region_RAM0_end__    = 0x20083FFF;
 define symbol __ICFEDIT_region_RAM1_start__  = 0x20100000;
 define symbol __ICFEDIT_region_RAM1_end__    = 0x2010107F;
@@ -41,7 +41,7 @@ do not initialize  { section .noinit };
 
 /*place at start of ROM0_region { readonly section .vectors };*/ /*Referenced for CMSIS*/
 place at address mem:__ICFEDIT_vector_start__ { readonly section .vectors }; /*Add for CMSIS*/
-place in ROM0_region          { readonly };
-place in RAM_region          { readwrite, block HEAP, block CSTACK };
+place in ROM0_region           { readonly };
+place in RAM_region            { readwrite, block HEAP, block CSTACK };
 /*place in RAM_region          { readwrite, block HEAP, block CSTACK };*/
-/*place in RAM_VECT_region      { block RamVect };*/ /*Referenced for CMSIS*/
+/*place in RAM_VECT_region     { block RamVect };*/ /*Referenced for CMSIS*/
