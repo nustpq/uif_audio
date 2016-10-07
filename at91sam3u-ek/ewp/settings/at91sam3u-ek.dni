@@ -12,7 +12,7 @@ ByteLimit=50
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
-Checksum=1743721389
+Checksum=2054815964
 =======
 Checksum=121039693
 >>>>>>> FM1388_spi_rec_2451
@@ -55,6 +55,12 @@ Fmt8={W}0:start_addr	4	0
 Fmt9={W}0:status	4	0
 Fmt10={W}0:test	4	0
 Fmt11={W}0:value	4	0
+[Disassemble mode]
+mode=0
+[Breakpoints2]
+Bp0=_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\..\app\usb.c}.345.13" 0 0 1 "" 0 "" 0
+Bp1=_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\..\app\spi_rec.c}.160.5" 0 0 1 "" 0 "" 0
+Count=2
 [Log file]
 LoggingEnabled=_ 0
 LogFile=_ ""
@@ -62,6 +68,9 @@ Category=_ 0
 [TermIOLog]
 LoggingEnabled=_ 0
 LogFile=_ ""
+[Aliases]
+Count=0
+SuppressDialog=0
 [CallStackLog]
 Enabled=0
 [DriverProfiling]
@@ -70,12 +79,3 @@ Mode=0
 Graph=0
 Symbiont=0
 Exclusions=
-[Disassemble mode]
-mode=0
-[Breakpoints2]
-Bp0=_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\..\app\usb.c}.345.13" 0 0 1 "" 0 "" 0
-Bp1=_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\..\app\spi_rec.c}.160.5" 0 0 1 "" 0 "" 0
-Count=2
-[Aliases]
-Count=0
-SuppressDialog=0

@@ -82,7 +82,7 @@
 
 typedef struct { 
   unsigned char  type;//Rec =0, Play =1
-  unsigned char  channel_num; //1~8  
+  unsigned char  channel_num; //valid data cahnnel num 1~8  
   unsigned short sample_rate; //8000, 16000, 24000, 32000, 48000 
 
   unsigned char  bit_length; // 16, 24, 32
@@ -97,13 +97,15 @@ typedef struct {
   unsigned char  spi_rec_bit_mask;
   
   unsigned char  format;  //1:I2S  2:PDM  3:PCM/TDM  
+  unsigned char  slot_num;  //bus BCLK slot num
   unsigned char  ssc_cki;
   unsigned char  ssc_delay;
+  
   unsigned char  ssc_start;
   unsigned char  master_slave;
   unsigned char  bclk_polarity;  //0 or 1
   
-  unsigned char  reserved[2];
+  unsigned char  reserved[1];
 }AUDIO_CFG;
 
 
