@@ -31,7 +31,7 @@
 #define  TO_HOST_CMD_DATA_BUF_RDY         0x41
 
 #define  TO_HOST_CMD_ADDR                (0x0FFFBFFC)
-#define  HW_VOICE_BUF_START              (0x0FFF3EE0)  // DRAM voice buffer : 0x0FFF3EE0 ~ 0x0FFFBEDF = 32kB
+#define  HW_VOICE_BUF_START              (0xfffaee0)//(0x0FFF3EE0)  // DRAM voice buffer : 0x0FFF3EE0 ~ 0x0FFFBEDF = 32kB
 #define  HW_VOICE_BUF_BANK_SIZE          (1024*2)  //2kB
 #define  HW_BUF_RX_L                     (0x0FFFE000)  //1kB
 #define  HW_BUF_RX_R                     (0x0FFFE400)  //1kB
